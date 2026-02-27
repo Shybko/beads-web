@@ -121,14 +121,16 @@ export function FolderBrowser({
         const dirs = listResult.entries.filter((entry) => entry.isDirectory);
 
         // Check which directories have .beads folders in parallel
+        // Some system dirs (e.g. "System Volume Information") may return 403 — ignore those
         const dirsWithBeadsStatus = await Promise.all(
           dirs.map(async (dir) => {
-            const beadsPath = `${dir.path}/.beads`;
-            const result = await api.fs.exists(beadsPath);
-            return {
-              ...dir,
-              hasBeads: result.exists,
-            };
+            try {
+              const beadsPath = `${dir.path}/.beads`;
+              const result = await api.fs.exists(beadsPath);
+              return { ...dir, hasBeads: result.exists };
+            } catch {
+              return { ...dir, hasBeads: false };
+            }
           })
         );
 

@@ -90,14 +90,15 @@ export function ScanDirectoryDialog({
       const dirs = entries.filter((e) => e.isDirectory);
 
       // Check each subdirectory for .beads folder in parallel
+      // Some system dirs may return 403 — ignore those
       const projectResults = await Promise.all(
         dirs.map(async (dir) => {
-          const result = await api.fs.exists(`${dir.path}/.beads`);
-          return {
-            name: dir.name,
-            path: dir.path,
-            hasBeads: result.exists,
-          };
+          try {
+            const result = await api.fs.exists(`${dir.path}/.beads`);
+            return { name: dir.name, path: dir.path, hasBeads: result.exists };
+          } catch {
+            return { name: dir.name, path: dir.path, hasBeads: false };
+          }
         })
       );
 
