@@ -411,8 +411,9 @@ pub async fn add_comment(Json(payload): Json<AddCommentRequest>) -> impl IntoRes
         }
     };
 
-    // Parse JSONL and find the target bead
-    let mut beads: Vec<Bead> = Vec::new();
+    // Parse JSONL as raw JSON values to preserve original field names and structure.
+    // We also parse as Bead to find the target and track comment IDs.
+    let mut raw_lines: Vec<serde_json::Value> = Vec::new();
     let mut found_bead_index: Option<usize> = None;
     let mut max_comment_id: i64 = 0;
 
@@ -422,30 +423,30 @@ pub async fn add_comment(Json(payload): Json<AddCommentRequest>) -> impl IntoRes
             continue;
         }
 
-        match serde_json::from_str::<Bead>(line) {
-            Ok(bead) => {
-                // Track the maximum comment ID across all beads
-                if let Some(comments) = &bead.comments {
-                    for comment in comments {
-                        if comment.id > max_comment_id {
-                            max_comment_id = comment.id;
+        match serde_json::from_str::<serde_json::Value>(line) {
+            Ok(value) => {
+                // Parse as Bead to extract typed info
+                if let Ok(bead) = serde_json::from_value::<Bead>(value.clone()) {
+                    if let Some(comments) = &bead.comments {
+                        for comment in comments {
+                            if comment.id > max_comment_id {
+                                max_comment_id = comment.id;
+                            }
                         }
                     }
+                    if bead.id == payload.bead_id {
+                        found_bead_index = Some(raw_lines.len());
+                    }
                 }
-
-                if bead.id == payload.bead_id {
-                    found_bead_index = Some(beads.len());
-                }
-                beads.push(bead);
+                raw_lines.push(value);
             }
             Err(e) => {
                 tracing::warn!(
-                    "Failed to parse bead at line {}: {} - {}",
+                    "Failed to parse line {}: {} - {}",
                     line_num + 1,
                     e,
                     line
                 );
-                // Continue parsing other lines - graceful handling of malformed lines
             }
         }
     }
@@ -465,23 +466,27 @@ pub async fn add_comment(Json(payload): Json<AddCommentRequest>) -> impl IntoRes
         }
     };
 
-    // Create the new comment
-    let new_comment = Comment {
-        id: max_comment_id + 1,
-        issue_id: payload.bead_id.clone(),
-        author: payload.author,
-        text: payload.text,
-        created_at: Utc::now().to_rfc3339(),
-    };
+    // Create the new comment as a JSON value
+    let new_comment = serde_json::json!({
+        "id": max_comment_id + 1,
+        "issue_id": payload.bead_id,
+        "author": payload.author,
+        "text": payload.text,
+        "created_at": Utc::now().to_rfc3339(),
+    });
 
-    // Add the comment to the bead
-    let bead = &mut beads[bead_index];
-    match &mut bead.comments {
-        Some(comments) => comments.push(new_comment),
-        None => bead.comments = Some(vec![new_comment]),
+    // Add the comment to the raw JSON value (preserving all original fields)
+    let raw_bead = &mut raw_lines[bead_index];
+    if let Some(obj) = raw_bead.as_object_mut() {
+        let comments = obj
+            .entry("comments")
+            .or_insert_with(|| serde_json::json!([]));
+        if let Some(arr) = comments.as_array_mut() {
+            arr.push(new_comment);
+        }
     }
 
-    // Write the updated beads back to the file
+    // Write all raw JSON values back to the file (preserving original format)
     let file = match std::fs::File::create(&issues_path) {
         Ok(f) => f,
         Err(e) => {
@@ -497,8 +502,8 @@ pub async fn add_comment(Json(payload): Json<AddCommentRequest>) -> impl IntoRes
     };
 
     let mut writer = std::io::BufWriter::new(file);
-    for bead in &beads {
-        match serde_json::to_string(bead) {
+    for value in &raw_lines {
+        match serde_json::to_string(value) {
             Ok(json_line) => {
                 if let Err(e) = writeln!(writer, "{}", json_line) {
                     return (
@@ -517,7 +522,7 @@ pub async fn add_comment(Json(payload): Json<AddCommentRequest>) -> impl IntoRes
                     Json(AddCommentResponse {
                         success: false,
                         bead: None,
-                        error: Some(format!("Failed to serialize bead: {}", e)),
+                        error: Some(format!("Failed to serialize: {}", e)),
                     }),
                 );
             }
@@ -535,13 +540,14 @@ pub async fn add_comment(Json(payload): Json<AddCommentRequest>) -> impl IntoRes
         );
     }
 
-    // Return the updated bead
-    let updated_bead = beads.swap_remove(bead_index);
+    // Return the updated bead (parsed from the modified raw JSON)
+    let updated_bead = serde_json::from_value::<Bead>(raw_lines.swap_remove(bead_index))
+        .ok();
     (
         StatusCode::OK,
         Json(AddCommentResponse {
             success: true,
-            bead: Some(updated_bead),
+            bead: updated_bead,
             error: None,
         }),
     )
@@ -602,7 +608,8 @@ pub fn recompute_epic_statuses(issues_path: &Path) -> Result<Vec<String>, String
     let contents = std::fs::read_to_string(issues_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
-    // Parse JSONL into beads
+    // Parse JSONL as both raw Values (for lossless write-back) and Beads (for logic)
+    let mut raw_lines: Vec<serde_json::Value> = Vec::new();
     let mut beads: Vec<Bead> = Vec::new();
     for (line_num, line) in contents.lines().enumerate() {
         let line = line.trim();
@@ -610,27 +617,37 @@ pub fn recompute_epic_statuses(issues_path: &Path) -> Result<Vec<String>, String
             continue;
         }
 
-        match serde_json::from_str::<Bead>(line) {
-            Ok(bead) => beads.push(bead),
+        match serde_json::from_str::<serde_json::Value>(line) {
+            Ok(value) => {
+                match serde_json::from_value::<Bead>(value.clone()) {
+                    Ok(bead) => beads.push(bead),
+                    Err(e) => {
+                        tracing::warn!(
+                            "Failed to parse bead at line {}: {}",
+                            line_num + 1,
+                            e
+                        );
+                    }
+                }
+                raw_lines.push(value);
+            }
             Err(e) => {
                 tracing::warn!(
-                    "Failed to parse bead at line {}: {} - {}",
+                    "Failed to parse JSON at line {}: {}",
                     line_num + 1,
-                    e,
-                    line
+                    e
                 );
             }
         }
     }
 
     // Build parent-child relationships
-    // parent_id -> Vec<child_id>
     let mut parent_to_children: HashMap<String, Vec<String>> = HashMap::new();
 
-    // First pass: Extract from explicit dependencies and parent field
+    // First pass: Extract from dependencies and parent field
     for bead in &mut beads {
-        if let Some(RawDependencies::Legacy(legacy_deps)) = bead.dependencies.take() {
-            for dep in &legacy_deps {
+        if let Some(RawDependencies::Legacy(ref legacy_deps)) = bead.dependencies {
+            for dep in legacy_deps {
                 if dep.dep_type == "parent-child" {
                     bead.parent_id = Some(dep.depends_on_id.clone());
                     parent_to_children
@@ -641,7 +658,6 @@ pub fn recompute_epic_statuses(issues_path: &Path) -> Result<Vec<String>, String
             }
         }
 
-        // Record parent-child from `parent` field (new format)
         if let Some(parent_id) = &bead.parent_id {
             let children = parent_to_children.entry(parent_id.clone()).or_default();
             if !children.contains(&bead.id) {
@@ -650,17 +666,14 @@ pub fn recompute_epic_statuses(issues_path: &Path) -> Result<Vec<String>, String
         }
     }
 
-    // Second pass: Infer parent-child from ID patterns (e.g., "64n.1" -> parent "64n")
-    // This matches how the bd CLI infers relationships when parent_id is not set
+    // Second pass: Infer parent-child from ID patterns
     let bead_ids: std::collections::HashSet<String> =
         beads.iter().map(|b| b.id.clone()).collect();
 
     for bead in &beads {
-        // Only infer if not already in parent_to_children
         if bead.parent_id.is_none() && bead.id.contains('.') {
             if let Some(dot_pos) = bead.id.rfind('.') {
                 let potential_parent = &bead.id[..dot_pos];
-                // Only infer if parent exists and not already recorded
                 if bead_ids.contains(potential_parent) {
                     let children = parent_to_children
                         .entry(potential_parent.to_string())
@@ -673,39 +686,30 @@ pub fn recompute_epic_statuses(issues_path: &Path) -> Result<Vec<String>, String
         }
     }
 
-    // Build a map of bead_id -> status for quick lookup (owned strings to avoid borrow issues)
+    // Build status map
     let status_map: HashMap<String, String> = beads
         .iter()
         .map(|b| (b.id.clone(), b.status.clone()))
         .collect();
 
-    // First pass: find which epics need updates
+    // Find which epics need updates
     let mut epic_updates: Vec<(String, String)> = Vec::new();
 
     for bead in &beads {
-        // Only process epics
         if bead.issue_type.as_deref() != Some("epic") {
             continue;
         }
-
-        // Skip closed epics - don't auto-reopen them
         if bead.status == "closed" {
             continue;
         }
-
-        // Get children for this epic
         let children = match parent_to_children.get(&bead.id) {
             Some(c) => c,
-            None => continue, // No children, skip
+            None => continue,
         };
-
-        // Collect child statuses
         let child_statuses: Vec<&str> = children
             .iter()
             .filter_map(|child_id| status_map.get(child_id).map(String::as_str))
             .collect();
-
-        // Compute the new status
         if let Some(new_status) = compute_epic_status_from_children(&child_statuses) {
             if bead.status != new_status {
                 epic_updates.push((bead.id.clone(), new_status.to_string()));
@@ -713,35 +717,36 @@ pub fn recompute_epic_statuses(issues_path: &Path) -> Result<Vec<String>, String
         }
     }
 
-    // Second pass: apply updates
+    // Apply updates to raw JSON values (preserving original field names)
     let mut updated_epic_ids: Vec<String> = Vec::new();
 
     for (epic_id, new_status) in &epic_updates {
-        for bead in &mut beads {
-            if &bead.id == epic_id {
-                tracing::info!(
-                    "Updating epic {} status from {} to {}",
-                    bead.id,
-                    bead.status,
-                    new_status
-                );
-                bead.status = new_status.clone();
-                bead.updated_at = Some(Utc::now().to_rfc3339());
-                updated_epic_ids.push(bead.id.clone());
-                break;
+        for value in &mut raw_lines {
+            if let Some(obj) = value.as_object_mut() {
+                if obj.get("id").and_then(|v| v.as_str()) == Some(epic_id) {
+                    tracing::info!(
+                        "Updating epic {} status to {}",
+                        epic_id,
+                        new_status
+                    );
+                    obj.insert("status".to_string(), serde_json::json!(new_status));
+                    obj.insert("updated_at".to_string(), serde_json::json!(Utc::now().to_rfc3339()));
+                    updated_epic_ids.push(epic_id.clone());
+                    break;
+                }
             }
         }
     }
 
-    // Write back if any epic was updated
+    // Write back if any epic was updated (using raw values to preserve format)
     if !updated_epic_ids.is_empty() {
         let file = std::fs::File::create(issues_path)
             .map_err(|e| format!("Failed to open file for writing: {}", e))?;
 
         let mut writer = std::io::BufWriter::new(file);
-        for bead in &beads {
-            let json_line = serde_json::to_string(bead)
-                .map_err(|e| format!("Failed to serialize bead: {}", e))?;
+        for value in &raw_lines {
+            let json_line = serde_json::to_string(value)
+                .map_err(|e| format!("Failed to serialize: {}", e))?;
             writeln!(writer, "{}", json_line)
                 .map_err(|e| format!("Failed to write to file: {}", e))?;
         }
@@ -1002,6 +1007,33 @@ mod tests {
         let bead: Bead = serde_json::from_str(json).unwrap();
         assert_eq!(bead.relates_to, Some(vec!["task-35".to_string()]));
         assert_eq!(bead.parent_id, Some("epic-65".to_string()));
+    }
+
+    #[test]
+    fn test_roundtrip_via_raw_value_preserves_format() {
+        // Simulate what add_comment and recompute_epic_statuses now do:
+        // parse as serde_json::Value, modify, write back
+        let input = r#"{"id":"task-71","title":"Migration","status":"open","parent":"epic-65","dependencies":["task-67"],"related":["task-35"],"closedAt":"2026-02-28T12:00:00Z"}"#;
+
+        // Parse as raw Value (as server now does)
+        let value: serde_json::Value = serde_json::from_str(input).unwrap();
+
+        // Serialize back
+        let output = serde_json::to_string(&value).unwrap();
+
+        println!("INPUT:  {}", input);
+        println!("OUTPUT: {}", output);
+
+        // All original field names must be preserved
+        assert!(output.contains("\"parent\":\"epic-65\""), "parent field preserved");
+        assert!(output.contains("\"dependencies\":[\"task-67\"]"), "dependencies preserved");
+        assert!(output.contains("\"related\":[\"task-35\"]"), "related field preserved");
+        assert!(output.contains("\"closedAt\":\"2026-02-28T12:00:00Z\""), "closedAt preserved");
+
+        // No mangled field names
+        assert!(!output.contains("parent_id"), "no parent_id in output");
+        assert!(!output.contains("relates_to"), "no relates_to in output");
+        assert!(!output.contains("closed_at"), "no closed_at in output");
     }
 
     // ── resolve_issues_path tests ──────────────────────────────────────
