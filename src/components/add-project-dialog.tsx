@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-import { Folder, Loader2, FolderSearch } from "lucide-react";
+import { Folder, Loader2, FolderSearch, Database } from "lucide-react";
 
 import { FolderBrowser } from "@/components/folder-browser";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import * as api from "@/lib/api";
+import type { DoltDatabase } from "@/lib/api";
 import type { CreateProjectInput } from "@/lib/db";
 
 
@@ -24,12 +25,14 @@ interface AddProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddProject: (input: CreateProjectInput) => Promise<void>;
+  existingProjectNames?: string[];
 }
 
 export function AddProjectDialog({
   open: isOpen,
   onOpenChange,
   onAddProject,
+  existingProjectNames = [],
 }: AddProjectDialogProps) {
   const [projectPath, setProjectPath] = useState<string>("");
   const [projectName, setProjectName] = useState<string>("");
@@ -39,7 +42,27 @@ export function AddProjectDialog({
   const [showNameInput, setShowNameInput] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const [browserPath, setBrowserPath] = useState("");
+  const [doltDatabases, setDoltDatabases] = useState<DoltDatabase[]>([]);
+  const [doltLoading, setDoltLoading] = useState(false);
   const { toast } = useToast();
+
+  // Fetch Dolt databases when dialog opens
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setDoltLoading(true);
+    api.dolt.databases()
+      .then((res) => {
+        if (!cancelled) setDoltDatabases(res.databases || []);
+      })
+      .catch(() => {
+        if (!cancelled) setDoltDatabases([]);
+      })
+      .finally(() => {
+        if (!cancelled) setDoltLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   const resetState = () => {
     setProjectPath("");
@@ -101,6 +124,19 @@ export function AddProjectDialog({
     }
   };
 
+  // Filter out databases that are already added as projects
+  const existingNamesLower = existingProjectNames.map((n) => n.toLowerCase());
+  const newDoltDatabases = doltDatabases.filter(
+    (db) => !existingNamesLower.includes(db.project_name.toLowerCase())
+  );
+
+  const handleDoltSelect = (db: DoltDatabase) => {
+    setProjectName(db.project_name);
+    setProjectPath("");
+    setShowNameInput(false);
+    setBrowsing(true);
+  };
+
   const handleBrowseSelect = (path: string, hasBeads: boolean) => {
     setProjectPath(path);
     setBrowsing(false);
@@ -159,6 +195,30 @@ export function AddProjectDialog({
 
         {!showNameInput ? (
           <div className="flex flex-col gap-4 py-4">
+            {/* Dolt auto-discovery section */}
+            {!browsing && !doltLoading && newDoltDatabases.length > 0 && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-sm font-medium text-zinc-300">
+                  <Database className="size-3.5" />
+                  Found in Dolt
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {newDoltDatabases.map((db) => (
+                    <button
+                      key={db.name}
+                      type="button"
+                      onClick={() => handleDoltSelect(db)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-500 hover:bg-zinc-700/50"
+                    >
+                      {db.project_name}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-500">
+                  Click to add — you&apos;ll need to provide the project path.
+                </p>
+              </div>
+            )}
             {browsing ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

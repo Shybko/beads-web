@@ -4,10 +4,12 @@
 //! and provides API endpoints for backend functionality.
 
 mod db;
+mod dolt;
 mod routes;
 
 use axum::{
     body::Body,
+    extract::Extension,
     http::{header, Request, Response, StatusCode},
     response::IntoResponse,
     routing::{delete, get, post, put},
@@ -106,11 +108,22 @@ async fn main() {
     );
     info!("Database initialized");
 
+    // Initialize Dolt connection manager
+    let dolt_manager = Arc::new(dolt::DoltManager::new());
+    if dolt_manager.check_server().await {
+        info!("Dolt server is available on port 3307");
+    } else {
+        info!("Dolt server not detected — will use bd CLI / JSONL fallback");
+    }
+
     // Build the router
     let app = Router::new()
         .route("/api/health", get(routes::health))
         .nest("/api", routes::project_routes().with_state(database))
         .route("/api/beads", get(routes::beads::read_beads))
+        // Dolt endpoints
+        .route("/api/dolt/status", get(routes::dolt::dolt_status))
+        .route("/api/dolt/databases", get(routes::dolt::dolt_databases))
         .route("/api/fs/list", get(routes::fs::list_directory))
         .route("/api/fs/exists", get(routes::fs::path_exists))
         .route("/api/fs/read", get(routes::fs::read_file))
@@ -142,6 +155,7 @@ async fn main() {
         .route("/api/memory/stats", get(routes::memory::memory_stats))
         .route("/api/watch/beads", get(routes::watch_beads))
         .fallback(serve_static)
+        .layer(Extension(dolt_manager))
         .layer(cors);
 
     let addr = format!("0.0.0.0:{}", port);

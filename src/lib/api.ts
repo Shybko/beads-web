@@ -349,6 +349,30 @@ export const agents = {
 };
 
 /**
+ * Dolt database status
+ */
+export interface DoltStatus {
+  running: boolean;
+  database_count: number | null;
+}
+
+/**
+ * Dolt database entry
+ */
+export interface DoltDatabase {
+  name: string;
+  project_name: string;
+}
+
+/**
+ * Dolt API
+ */
+export const dolt = {
+  status: () => fetchApi<DoltStatus>('/api/dolt/status'),
+  databases: () => fetchApi<{ databases: DoltDatabase[] }>('/api/dolt/databases'),
+};
+
+/**
  * File Watcher (Server-Sent Events)
  */
 export const watch = {

@@ -6,7 +6,7 @@
 //! - **JSONL** (fallback): reads from `.beads/issues.jsonl` if bd CLI is unavailable
 
 use axum::{
-    extract::Query,
+    extract::{Extension, Query},
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -16,10 +16,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::process::Command;
 
 use super::validate_path_security;
+use crate::dolt::{self, DoltManager};
 
 /// Resolves the correct path to `issues.jsonl` for a project.
 ///
@@ -127,12 +129,12 @@ pub struct Bead {
     pub relates_to: Option<Vec<String>>,
     /// Raw dependencies field — accepts both old (array of objects) and new (array of strings) formats.
     #[serde(default, skip_serializing, deserialize_with = "deserialize_dependencies")]
-    dependencies: Option<RawDependencies>,
+    pub(crate) dependencies: Option<RawDependencies>,
 }
 
 /// Parsed dependencies in either old or new format.
 #[derive(Debug, Clone)]
-enum RawDependencies {
+pub(crate) enum RawDependencies {
     /// Old format: array of `{depends_on_id, type}` objects
     Legacy(Vec<LegacyDependency>),
     /// New format: flat array of string IDs (blocking deps)
@@ -268,8 +270,14 @@ fn read_beads_from_jsonl(issues_path: &Path) -> Result<Vec<Bead>, String> {
 
 /// GET /api/beads?path=/path/to/project
 ///
-/// Reads beads from a project. Tries bd CLI (Dolt) first, falls back to JSONL.
-pub async fn read_beads(Query(params): Query<BeadsParams>) -> impl IntoResponse {
+/// Reads beads from a project. Three-tier fallback:
+/// 1. Dolt SQL (direct MySQL connection)
+/// 2. bd CLI (`bd list --json`)
+/// 3. JSONL file (`.beads/issues.jsonl`)
+pub async fn read_beads(
+    Extension(dolt_manager): Extension<Arc<DoltManager>>,
+    Query(params): Query<BeadsParams>,
+) -> impl IntoResponse {
     let project_path = PathBuf::from(&params.path);
 
     // Security: Validate path is within allowed directories
@@ -289,29 +297,45 @@ pub async fn read_beads(Query(params): Query<BeadsParams>) -> impl IntoResponse 
         );
     }
 
-    // Try bd CLI first (Dolt database), fall back to JSONL
-    let mut beads = match read_beads_from_cli(&project_path).await {
-        Ok(b) => {
-            tracing::info!("Read {} beads from bd CLI for {}", b.len(), params.path);
-            b
-        }
-        Err(cli_err) => {
-            tracing::info!("bd CLI unavailable ({}), falling back to JSONL", cli_err);
-            let issues_path = resolve_issues_path(&project_path);
-            if !issues_path.exists() {
-                return (
-                    StatusCode::NOT_FOUND,
-                    Json(serde_json::json!({ "error": "No .beads/issues.jsonl found and bd CLI unavailable" })),
-                );
-            }
-            match read_beads_from_jsonl(&issues_path) {
-                Ok(b) => b,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(serde_json::json!({ "error": e })),
-                    );
+    // Tier 1: Try Dolt SQL (direct MySQL connection)
+    let mut beads = 'fallback: {
+        if dolt_manager.is_available() {
+            if let Some(db_name) = dolt::database_name_for_project(&project_path) {
+                match dolt_manager.read_beads(&db_name).await {
+                    Ok(b) => break 'fallback b,
+                    Err(e) => {
+                        tracing::info!("Dolt SQL failed for {} ({}), trying bd CLI", db_name, e);
+                    }
                 }
+            }
+        }
+
+        // Tier 2: Try bd CLI
+        match read_beads_from_cli(&project_path).await {
+            Ok(b) => {
+                tracing::info!("Read {} beads from bd CLI for {}", b.len(), params.path);
+                break 'fallback b;
+            }
+            Err(cli_err) => {
+                tracing::info!("bd CLI unavailable ({}), falling back to JSONL", cli_err);
+            }
+        }
+
+        // Tier 3: JSONL file
+        let issues_path = resolve_issues_path(&project_path);
+        if !issues_path.exists() {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({ "error": "No data source available: Dolt SQL, bd CLI, and JSONL all failed" })),
+            );
+        }
+        match read_beads_from_jsonl(&issues_path) {
+            Ok(b) => b,
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": e })),
+                );
             }
         }
     };
