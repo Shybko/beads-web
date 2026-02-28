@@ -22,9 +22,6 @@ const DOLT_USER: &str = "root";
 /// Errors from Dolt operations.
 #[derive(Debug, thiserror::Error)]
 pub enum DoltError {
-    #[error("Dolt server not running on {DOLT_HOST}:{DOLT_PORT}")]
-    ServerNotRunning,
-
     #[error("MySQL connection failed: {0}")]
     ConnectionFailed(String),
 
@@ -235,10 +232,6 @@ impl DoltManager {
         Ok(beads)
     }
 
-    /// Gracefully disconnect the pool.
-    pub async fn disconnect(self) {
-        self.pool.disconnect().await.ok();
-    }
 }
 
 /// A discovered Dolt database.

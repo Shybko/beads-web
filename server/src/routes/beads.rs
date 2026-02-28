@@ -81,7 +81,7 @@ pub struct BeadsParams {
 /// "dependencies": [{"depends_on_id":"parent-1", "type":"parent-child"}]
 /// ```
 #[derive(Debug, Deserialize, Clone)]
-struct LegacyDependency {
+pub(crate) struct LegacyDependency {
     depends_on_id: String,
     #[serde(rename = "type")]
     dep_type: String,
@@ -297,27 +297,37 @@ pub async fn read_beads(
         );
     }
 
+    // Three-tier fallback: Dolt SQL → bd CLI → JSONL
+    let mut skip_cli = false;
+
     // Tier 1: Try Dolt SQL (direct MySQL connection)
     let mut beads = 'fallback: {
         if dolt_manager.is_available() {
             if let Some(db_name) = dolt::database_name_for_project(&project_path) {
                 match dolt_manager.read_beads(&db_name).await {
                     Ok(b) => break 'fallback b,
+                    Err(crate::dolt::DoltError::DatabaseNotFound(_)) => {
+                        // DB not on this server — bd CLI won't find it either
+                        tracing::debug!("Dolt database {} not found, skipping to JSONL", db_name);
+                        skip_cli = true;
+                    }
                     Err(e) => {
-                        tracing::info!("Dolt SQL failed for {} ({}), trying bd CLI", db_name, e);
+                        tracing::debug!("Dolt SQL failed for {} ({}), trying bd CLI", db_name, e);
                     }
                 }
             }
         }
 
-        // Tier 2: Try bd CLI
-        match read_beads_from_cli(&project_path).await {
-            Ok(b) => {
-                tracing::info!("Read {} beads from bd CLI for {}", b.len(), params.path);
-                break 'fallback b;
-            }
-            Err(cli_err) => {
-                tracing::info!("bd CLI unavailable ({}), falling back to JSONL", cli_err);
+        // Tier 2: Try bd CLI (skip if Dolt already said DB doesn't exist)
+        if !skip_cli {
+            match read_beads_from_cli(&project_path).await {
+                Ok(b) => {
+                    tracing::info!("Read {} beads from bd CLI for {}", b.len(), params.path);
+                    break 'fallback b;
+                }
+                Err(cli_err) => {
+                    tracing::debug!("bd CLI unavailable ({}), falling back to JSONL", cli_err);
+                }
             }
         }
 
