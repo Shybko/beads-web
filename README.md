@@ -1,195 +1,150 @@
-<p align="center">
-  <img src="logo/logo.png" alt="Beads Kanban UI" width="200" />
-</p>
+<div align="center">
 
-<p align="center">A visual Kanban UI for <a href="https://github.com/steveyegge/beads">Beads CLI</a> — built with Next.js + Rust. Real-time sync, epic tracking, git ops and multi-project dashboard.</p>
+# BEADS WEB
 
-> **Works great with [Beads Orchestration](https://github.com/AvivK5498/Claude-Code-Beads-Orchestration)** — A multi-agent orchestration framework for Claude Code that uses beads for git-native task tracking.
+**Visual command center for beads task tracking.**
 
-## See It in Action
+[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
 
-**Dashboard** — All your projects in one place with status at a glance:
-![Dashboard with multi-project view, status donuts, and tags](screenshots/dashboard.png)
+<br>
 
-**Kanban Board** — Organize tasks across Open → In Progress → In Review → Closed:
-![Kanban board showing epic groups and task cards with git branch info](screenshots/kanban-board.png)
+![Beads Web — Kanban Board](screenshots/kanban-default.png)
 
-**Bead Details** — Dive into epics with full context and subtasks:
-![Bead detail panel showing epic with progress bar and subtasks](screenshots/bead-detail.png)
+<br>
 
-**Agents Panel** — View and configure agent definitions with model and tool controls:
-![Agents panel showing agent cards with model selector and tools](screenshots/agents.png)
+[Why](#why) · [Origin](#origin) · [Features](#features) · [Themes](#themes) · [Installation](#installation) · [Development](#development) · [FAQ](#faq)
 
-## Key Features
+**[Русская версия](README-ru.md)**
 
-- 📋 **Multi-project dashboard** — Manage all your beads projects in one place with status donut charts
-- 🗂️ **Kanban board** — Open → In Progress → In Review → Closed with drag-to-update workflow
-- 🛠️ **GitOps** — Create, view, and merge pull requests directly from the board. CI status, merge conflicts, and auto-close on merge — no terminal needed
-- 🏗️ **Epic support** — Group related tasks with visual progress bars, view all subtasks, close epic when complete
-- 🔗 **Related tasks** — Bidirectional "see also" links between beads via `bd dep relate`, visible on cards, subtask rows, and detail panels
-- 🧠 **Memory panel** — Browse, search, edit, and archive your project's knowledge base (`.beads/memory/knowledge.jsonl`) from a slide-out panel
-- 🤖 **Agents panel** — View and configure your `.claude/agents/*.md` agent definitions — switch models and toggle tool access from the UI
-- 🎨 **Type-based visuals** — Bugs, features, and epics display with distinct accent colors for quick recognition
-- 🔄 **Real-time sync** — File watcher auto-updates when beads files change on disk; PR status refreshes every 30s
-- 🔍 **Search & filter** — Unified floating toolbar with search, type filters (epics/tasks), today mode, status, and owner filters
-- 🏷️ **Project tagging** — Organize with colored tags and filter by them
-- ⚡ **Performance optimized** — Efficient polling skips closed beads to reduce unnecessary checks
+</div>
 
-## Quick Start
+---
 
-### Option 1: npm install (Recommended)
+## Why
 
-**Prerequisites:**
-- Beads CLI: `brew install steveyegge/beads/bd`
+Beads CLI is powerful for task tracking, but:
+- No visual overview of task status across columns
+- No drag-and-drop to move tasks between states
+- No way to see epic progress at a glance
+- No visual diff between blocked, ready, and in-progress
 
-**Install and run:**
+Beads Web gives you a real-time Kanban board, multi-project dashboard, and git operations — without leaving the browser.
+
+## Origin
+
+Inspired by [Beads-Kanban-UI](https://github.com/AvivK5498/Beads-Kanban-UI) by Aviv Kaplan. The original author appears to have stopped development — PRs go unreviewed for months.
+
+This fork has diverged significantly: 84 files changed, ~9500 lines added.
+
+<details>
+<summary>What changed (summary)</summary>
+
+- 7 visual themes with persistence and flash prevention
+- Inline editing for bead fields (click to edit title, description, notes)
+- Click-to-copy bead IDs
+- Dolt direct SQL integration (no filesystem needed)
+- One-click project discovery from Dolt databases
+- Windows multi-drive path support
+- File browser for adding projects
+- Decomposed components (bead-detail, epic-card, etc.)
+- Vitest test setup
+- Full component decomposition and refactoring
+- Drag-and-drop status updates
+
+</details>
+
+Full changelog with rationale: [docs/changelog.md](docs/changelog.md)
+
+## Features
+
+- **Multi-project dashboard** — all projects in one place with status donut charts
+- **Kanban board** — Open → In Progress → In Review → Closed with drag-to-update
+- **Epic support** — group tasks with visual progress bars, view subtasks
+- **GitOps** — create, view, and merge PRs from the board. CI status, merge conflicts, auto-close
+- **Memory panel** — browse, search, edit knowledge base entries
+- **7 themes** — Default Dark, Glassmorphism, Neo-Brutalist, Linear Minimal, Soft Light, Notion Warm, GitHub Clean
+- **Dolt integration** — connect to Dolt databases directly, no filesystem path needed
+- **Real-time sync** — SSE file watcher for local projects, polling for Dolt
+
+## Themes
+
+Default Dark theme is shown in the main screenshot above.
+
+<details>
+<summary>See all 7 themes</summary>
+
+**Glassmorphism**
+![Glassmorphism](screenshots/dashboard-glassmorphism.png)
+
+**Neo-Brutalist**
+![Neo-Brutalist](screenshots/dashboard-neo-brutalist.png)
+
+**Linear Minimal**
+![Linear Minimal](screenshots/dashboard-linear-minimal.png)
+
+**Soft Light**
+![Soft Light](screenshots/dashboard-soft-light.png)
+
+**Notion Warm**
+![Notion Warm](screenshots/dashboard-notion-warm.png)
+
+**GitHub Clean**
+![GitHub Clean](screenshots/dashboard-github-clean.png)
+
+</details>
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS, Radix UI, dnd-kit
+- **Backend**: Rust (Axum), SQLite, Dolt SQL
+- **Build**: Static export embedded into Rust binary via rust-embed
+
+## Installation
+
+### Prerequisites
+
+- Node.js 20+
+- Rust toolchain (cargo)
+- Beads CLI (`bd`)
+
+### Build & Run
+
 ```bash
-npm install -g beads-kanban-ui
-bead-kanban
-```
-
-That's it! The server starts automatically and opens your browser.
-
-> On first run, the postinstall script downloads the platform binary (~15MB). This is one-time only.
-
-### Option 2: Build from source
-
-**Prerequisites:**
-```bash
-# Install beads CLI
-brew install steveyegge/beads/bd
-
-# You'll also need Node.js 18+ and Rust
-```
-
-**Install and run:**
-```bash
-git clone https://github.com/AvivK5498/beads-kanban-ui
-cd beads-kanban-ui
+git clone https://github.com/weselow/beads-web.git
+cd beads-web
 npm install
-npm run dev:full
-```
-
-Then navigate to **`http://localhost:3007`** and add your beads projects.
-
-The app watches for file changes and syncs in real-time.
-
----
-
-## How It Works
-
-### Dashboard
-1. Click **+ Add Project** and select a directory with a `.beads/` folder
-2. See all projects with status donuts showing task distribution
-3. Click any project to view its Kanban board
-
-### Kanban Board
-1. Tasks are organized by status: Open, In Progress, In Review, Closed
-2. Drag cards between columns to update status
-3. Click any task to see full details, comments, and related subtasks (for epics)
-
-### Features in Detail
-
-**Epic Management**
-- Group related tasks under a single epic
-- Visual progress bar shows completion percentage (e.g., "3/5 children done")
-- Click "Close Epic" button when 100% of children are complete
-- View all subtasks directly within the epic card
-- Design documents automatically linked to epics
-
-**GitOps**
-- Create pull requests directly from the bead detail panel
-- View real-time CI check status (pass/fail/pending) on each card and in detail view
-- Merge PRs from the UI — no need to switch to GitHub
-- Beads auto-close when their PR is merged (worktree cleanup included)
-- Merge conflict alerts surface immediately
-- Worktree status (ahead/behind) shown on each task card
-- PR status auto-refreshes every 30 seconds
-
-**Type-Based Visual Coding**
-- Bug, feature, and epic tasks display with distinct accent colors
-- Quickly identify task types at a glance without reading labels
-- Consistent color scheme across dashboard and board views
-
-**Memory Panel**
-- Access your project's knowledge base from the unified toolbar (🧠 button)
-- Browse learned insights and investigation findings captured during development
-- Search and filter entries by type (Learned / Investigation)
-- Edit content and tags inline, archive or delete entries
-- Click any entry to navigate directly to its linked bead
-
-**Agents Panel**
-- View all your project's agent definitions (`.claude/agents/*.md`) from the toolbar (🤖 button)
-- Each agent card shows name, model badge (haiku/sonnet/opus), description, and available tools
-- Expand any card to switch the agent's model or toggle all-tools access
-- Changes write directly to the agent's `.md` file, updating the YAML frontmatter
-
-**Related Tasks**
-- Create bidirectional "see also" links between beads with `bd dep relate`
-- Related task count shown on kanban cards alongside comment count
-- Full "Related Tasks" section in the bead detail panel with clickable navigation
-- Epic subtask rows show per-child related count badges
-
-**Search & Filter**
-- Unified floating toolbar consolidates all controls into a single pill bar
-- Quick filters for status, priority, and assigned owner
-- Type filter to show only epics or standalone tasks
-- Today mode to surface recently updated items
-- Project tags for organization
-
-**Real-time Sync**
-- The app watches `.beads/issues.jsonl` and updates automatically
-- No refresh needed—changes appear instantly
-
-**Performance Optimized**
-- Polling intelligently skips closed beads to reduce load
-- Worktree status checking only runs for active tasks
-- PR status updates are batched to minimize API calls
-
----
-
-## Detailed Setup
-
-### Development Mode
-
-Run both frontend and backend together:
-```bash
-npm run dev:full
-```
-
-Or run separately:
-```bash
-# Terminal 1: Frontend (http://localhost:3007)
-npm run dev
-
-# Terminal 2: Backend (http://localhost:3008)
-npm run server:dev
-```
-
-The Rust backend builds automatically on first run. If you need to rebuild it:
-```bash
-cd server && cargo build --release && cd ..
-```
-
-### Production Build
-
-For a single binary deployment:
-```bash
 npm run build
-npm run server:build
+cd server && cargo build --release
 ./server/target/release/beads-server
 ```
 
-The production server embeds the frontend and serves everything from a single binary on port 3008.
+Open http://localhost:3007
 
----
+## Development
 
-## Related Projects
+```bash
+# Terminal 1: Frontend dev server
+npm run dev
 
-- **[Beads CLI](https://github.com/steveyegge/beads)** — Git-native issue tracker (the core tool this UI wraps)
-- **[Beads Orchestration](https://github.com/AvivK5498/Claude-Code-Beads-Orchestration)** — Multi-agent orchestration framework for Claude Code using beads
+# Terminal 2: Rust backend
+cd server && cargo run
+```
 
----
+Note: `next dev` requires commenting out `output: 'export'` in `next.config.js`.
+
+## FAQ
+
+**Q: Do I need Dolt?**
+A: No. Beads Web works with local filesystem projects using `bd` CLI. Dolt adds direct SQL access and remote database support.
+
+**Q: How do I add a project?**
+A: Click "Add Project" on the dashboard. Browse to your project folder or enter a `dolt://` URL.
+
+## Credits
+
+- [Beads-Kanban-UI](https://github.com/AvivK5498/Beads-Kanban-UI) by Aviv Kaplan — original project
+- [beads](https://github.com/steveyegge/beads) by Steve Yegge — git-native task tracking
+- [Claude Protocol](https://github.com/weselow/claude-protocol) — orchestration framework (works great together)
 
 ## License
 
