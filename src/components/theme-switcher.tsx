@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 
 import { Check, Palette } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { THEMES, getSavedTheme, applyTheme, type ThemeDefinition } from "@/lib/themes";
+import { cn } from "@/lib/utils";
 
 /**
  * Theme preview swatch — shows 4 color dots representing the theme palette

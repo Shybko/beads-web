@@ -4,8 +4,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
-// Import after mocking fetch
-import * as api from '../api';
+// Import after mocking fetch — must come after vi.stubGlobal
+import * as api from '../api'; // eslint-disable-line import/first
 
 // Helper to create a mock Response
 function mockResponse(data: unknown, status = 200) {
