@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 
 
-import { Plus, ChevronDown, FolderPlus, FolderSearch, Github, Settings, Search, X } from "lucide-react";
+import { Plus, ChevronDown, FolderPlus, FolderSearch, Github, Search, X } from "lucide-react";
 
 import { AddProjectDialog } from "@/components/add-project-dialog";
 import { ProjectCard } from "@/components/project-card";
@@ -123,19 +123,6 @@ export default function ProjectsPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-surface-base">
-      {/* Navigation Bar */}
-      <nav className="sticky top-0 z-30 border-b border-b-default bg-surface-base/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-center px-6 py-2">
-          <a
-            href="/settings"
-            aria-label="Settings"
-            className="rounded-md p-2 text-t-tertiary transition-colors duration-150 hover:text-t-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-t-tertiary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base"
-          >
-            <Settings className="h-5 w-5" aria-hidden="true" />
-          </a>
-        </div>
-      </nav>
-
       {/* Hero Section - pushed down with padding */}
       <main className="flex flex-col items-center px-6 pt-32">
         {/* Centered Heading with Space Grotesk */}
@@ -145,7 +132,7 @@ export default function ProjectsPage() {
         <p className="text-center text-t-tertiary text-sm mb-8">
           Highly recommended to use with the{" "}
           <a
-            href="https://github.com/AvivK5498/Claude-Code-Beads-Orchestration"
+            href="https://github.com/weselow/claude-protocol"
             target="_blank"
             rel="noopener noreferrer"
             className="text-info hover:text-info underline"
@@ -314,7 +301,7 @@ export default function ProjectsPage() {
       <footer className="mt-auto border-t border-b-default py-3">
         <div className="mx-auto flex max-w-[1200px] items-center justify-center gap-4 px-6">
           <a
-            href="https://github.com/AvivK5498/beads-kanban-ui"
+            href="https://github.com/weselow/claude-protocol"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-sm text-t-muted transition-colors hover:text-t-secondary"

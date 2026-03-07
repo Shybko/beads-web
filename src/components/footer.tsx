@@ -5,7 +5,7 @@ export function Footer() {
         <span>Beads Kanban UI</span>
         <span className="hidden sm:inline">·</span>
         <a
-          href="https://github.com/AvivK5498/beads-kanban-ui"
+          href="https://github.com/weselow/claude-protocol"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 hover:text-t-primary transition-colors"
