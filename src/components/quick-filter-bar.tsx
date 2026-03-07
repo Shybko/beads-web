@@ -72,6 +72,8 @@ interface QuickFilterBarProps {
   isAgentsOpen?: boolean;
   /** Callback to toggle agents panel */
   onAgentsToggle?: () => void;
+  /** Whether the project has a filesystem path (not dolt-only) */
+  hasProjectPath?: boolean;
   /** Count of beads with truly unknown statuses */
   unknownStatusCount?: number;
   /** List of unknown status names for tooltip */
@@ -124,6 +126,7 @@ export function QuickFilterBar({
   onMemoryToggle,
   isAgentsOpen,
   onAgentsToggle,
+  hasProjectPath = true,
   unknownStatusCount = 0,
   unknownStatusNames = [],
 }: QuickFilterBarProps) {
@@ -204,13 +207,17 @@ export function QuickFilterBar({
       {onMemoryToggle && (
         <button
           type="button"
-          onClick={onMemoryToggle}
+          onClick={hasProjectPath ? onMemoryToggle : undefined}
+          disabled={!hasProjectPath}
           aria-pressed={isMemoryOpen}
+          title={hasProjectPath ? undefined : 'Requires project folder path'}
           className={cn(
             'h-8 px-3 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised',
-            isMemoryOpen
-              ? 'bg-epic/20 text-epic'
-              : 'bg-surface-overlay/50 text-t-tertiary hover:text-t-secondary'
+            !hasProjectPath
+              ? 'bg-surface-overlay/30 text-t-faint cursor-not-allowed'
+              : isMemoryOpen
+                ? 'bg-epic/20 text-epic'
+                : 'bg-surface-overlay/50 text-t-tertiary hover:text-t-secondary'
           )}
         >
           <BrainCircuit className="size-4" aria-hidden="true" />
@@ -222,13 +229,17 @@ export function QuickFilterBar({
       {onAgentsToggle && (
         <button
           type="button"
-          onClick={onAgentsToggle}
+          onClick={hasProjectPath ? onAgentsToggle : undefined}
+          disabled={!hasProjectPath}
           aria-pressed={isAgentsOpen}
+          title={hasProjectPath ? undefined : 'Requires project folder path'}
           className={cn(
             'h-8 px-3 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised',
-            isAgentsOpen
-              ? 'bg-blocked-accent/20 text-blocked-accent'
-              : 'bg-surface-overlay/50 text-t-tertiary hover:text-t-secondary'
+            !hasProjectPath
+              ? 'bg-surface-overlay/30 text-t-faint cursor-not-allowed'
+              : isAgentsOpen
+                ? 'bg-blocked-accent/20 text-blocked-accent'
+                : 'bg-surface-overlay/50 text-t-tertiary hover:text-t-secondary'
           )}
         >
           <Bot className="size-4" aria-hidden="true" />

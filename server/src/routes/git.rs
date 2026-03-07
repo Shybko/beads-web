@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use tokio::process::Command;
 
+use super::validate_path_security;
+
 /// Query parameters for the branch status endpoint.
 #[derive(Deserialize)]
 pub struct GitStatusParams {
@@ -40,6 +42,10 @@ pub struct BranchStatusResponse {
 /// Returns branch existence, ahead/behind counts, and dirty status.
 pub async fn branch_status(Query(params): Query<GitStatusParams>) -> impl IntoResponse {
     let repo_path = Path::new(&params.path);
+
+    if let Err(e) = validate_path_security(repo_path) {
+        return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": e }))).into_response();
+    }
 
     // Validate repository path exists
     if !repo_path.exists() {

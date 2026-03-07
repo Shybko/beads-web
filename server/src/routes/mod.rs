@@ -49,6 +49,11 @@ pub async fn health() -> impl IntoResponse {
 /// - `Ok(())` if the path is valid and within allowed directories
 /// - `Err(String)` with an error message if validation fails
 pub fn validate_path_security(path: &Path) -> Result<(), String> {
+    // Reject dolt:// virtual paths — these are not filesystem paths
+    if path.to_string_lossy().starts_with("dolt://") {
+        return Err("dolt:// paths cannot be used for filesystem operations".to_string());
+    }
+
     // Canonicalize paths for comparison (resolves symlinks and ..)
     let canonical_path = match path.canonicalize() {
         Ok(p) => p,

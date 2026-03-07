@@ -235,6 +235,7 @@ export function AddProjectDialog({
                 </div>
                 <p className="text-xs text-t-muted">
                   Click to add instantly (read-only via Dolt SQL).
+                  Memory and Agents require a local project folder — add via path instead.
                 </p>
               </div>
             )}

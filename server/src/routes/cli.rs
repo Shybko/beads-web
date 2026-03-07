@@ -8,6 +8,8 @@ use std::path::Path;
 use std::time::Duration;
 use tokio::process::Command;
 
+use super::validate_path_security;
+
 /// Whitelisted bd subcommands that are allowed to be executed.
 const ALLOWED_COMMANDS: &[&str] = &["list", "show", "comment", "update", "close", "create", "ready", "epic"];
 
@@ -72,6 +74,9 @@ pub async fn bd_command(Json(req): Json<BdCommandRequest>) -> impl IntoResponse 
     // Validate and set working directory
     let cwd = if let Some(ref dir) = req.cwd {
         let path = Path::new(dir);
+        if let Err(e) = validate_path_security(path) {
+            return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": e }))).into_response();
+        }
         if !path.exists() {
             return (
                 StatusCode::BAD_REQUEST,

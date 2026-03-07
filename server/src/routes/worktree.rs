@@ -12,6 +12,15 @@ use std::io::Write;
 use std::path::Path;
 use tokio::process::Command;
 
+use super::validate_path_security;
+
+/// Validate repo_path, returning a FORBIDDEN response on failure.
+fn check_repo_path(repo_path: &Path) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+    validate_path_security(repo_path).map_err(|e| {
+        (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": e })))
+    })
+}
+
 // ============================================================================
 // Worktree Status Endpoint
 // ============================================================================
@@ -61,6 +70,7 @@ pub struct WorktreeStatusResponse {
 /// Returns worktree existence, path, branch, ahead/behind counts, and dirty status.
 pub async fn worktree_status(Query(params): Query<WorktreeStatusParams>) -> impl IntoResponse {
     let repo_path = Path::new(&params.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() {
@@ -164,6 +174,7 @@ pub struct CreateWorktreeResponse {
 /// Returns the worktree path and whether it already existed.
 pub async fn create_worktree(Json(request): Json<CreateWorktreeRequest>) -> impl IntoResponse {
     let repo_path = Path::new(&request.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() || !repo_path.is_dir() {
@@ -324,6 +335,7 @@ pub struct DeleteWorktreeResponse {
 /// ```
 pub async fn delete_worktree(Json(request): Json<DeleteWorktreeRequest>) -> impl IntoResponse {
     let repo_path = Path::new(&request.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() {
@@ -461,6 +473,7 @@ pub struct ListWorktreesResponse {
 /// Returns a list of all worktrees with their paths, branches, and bead IDs.
 pub async fn list_worktrees(Query(params): Query<ListWorktreesParams>) -> impl IntoResponse {
     let repo_path = Path::new(&params.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() {
@@ -664,6 +677,7 @@ pub struct PrStatusResponse {
 /// Returns PR information, CI checks, and rate limit info.
 pub async fn pr_status(Query(params): Query<PrStatusParams>) -> impl IntoResponse {
     let repo_path = Path::new(&params.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() {
@@ -758,6 +772,7 @@ pub struct CreatePrResponse {
 /// ```
 pub async fn create_pr(Json(request): Json<CreatePrRequest>) -> impl IntoResponse {
     let repo_path = Path::new(&request.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() {
@@ -932,6 +947,7 @@ pub struct MergePrResponse {
 /// ```
 pub async fn merge_pr(Json(request): Json<MergePrRequest>) -> impl IntoResponse {
     let repo_path = Path::new(&request.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() {
@@ -1047,6 +1063,7 @@ pub struct PrFilesResponse {
 /// Returns the list of changed files with additions/deletions and totals.
 pub async fn pr_files(Query(params): Query<PrFilesParams>) -> impl IntoResponse {
     let repo_path = Path::new(&params.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() {
@@ -1525,6 +1542,7 @@ fn get_bead_status(repo_path: &Path, bead_id: &str) -> Option<String> {
 /// Returns results for each sibling worktree rebase attempt.
 pub async fn rebase_siblings(Json(request): Json<RebaseSiblingsRequest>) -> impl IntoResponse {
     let repo_path = Path::new(&request.repo_path);
+    if let Err(resp) = check_repo_path(repo_path) { return resp.into_response(); }
 
     // Validate repository path exists
     if !repo_path.exists() {

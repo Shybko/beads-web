@@ -19,6 +19,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use tracing::{error, info, warn};
 
 use super::beads::{recompute_epic_statuses, resolve_issues_path};
+use super::validate_path_security;
 
 /// Query parameters for the watch endpoint.
 #[derive(Debug, Deserialize)]
@@ -53,6 +54,15 @@ pub async fn watch_beads(
     Query(params): Query<WatchParams>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let project_path = PathBuf::from(&params.path);
+
+    // Reject dolt:// paths — no filesystem to watch
+    if let Err(e) = validate_path_security(&project_path) {
+        warn!("Watch rejected for invalid path: {}", e);
+        let (tx, rx) = mpsc::channel::<Result<Event, Infallible>>(1);
+        drop(tx); // Close immediately
+        return Sse::new(ReceiverStream::new(rx));
+    }
+
     let beads_file = resolve_issues_path(&project_path);
 
     info!("Starting file watcher for: {:?}", beads_file);

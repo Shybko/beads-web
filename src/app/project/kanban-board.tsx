@@ -31,7 +31,9 @@ import { useBeads } from "@/hooks/use-beads";
 import { useGitHubStatus } from "@/hooks/use-github-status";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useProject } from "@/hooks/use-project";
+import { useTheme } from "@/hooks/use-theme";
 import { useWorktreeStatuses } from "@/hooks/use-worktree-statuses";
+import { isBlocked } from "@/lib/bead-utils";
 import { getUnknownStatusBeads, getUnknownStatusNames } from "@/lib/beads-parser";
 import { isDoltProject } from "@/lib/utils";
 import type { Bead, BeadStatus } from "@/types";
@@ -97,6 +99,9 @@ export default function KanbanBoard() {
 
   // Track whether the GitHub warning has been dismissed (session-only)
   const [githubWarningDismissed, setGithubWarningDismissed] = useState(false);
+
+  // Theme
+  const { theme } = useTheme();
 
   // Memory panel state
   const [isMemoryOpen, setIsMemoryOpen] = useState(false);
@@ -271,20 +276,32 @@ export default function KanbanBoard() {
 
   return (
     <div className="min-h-dvh bg-surface-base flex flex-col">
-      {/* Breadcrumb line */}
-      <div className="flex items-center gap-2 px-4 py-2">
-        <Button variant="ghost" size="icon" asChild>
-          <a href="/">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Back to projects</span>
-          </a>
-        </Button>
-        <EditableProjectName
-          projectId={project.id}
-          initialName={project.name}
-          onNameUpdated={refetchProject}
-        />
-      </div>
+      {/* Header — terminal variant for neo-brutalist, standard otherwise */}
+      {theme.headerVariant === 'terminal' ? (
+        <div className="flex items-center justify-between px-6 py-4 terminal-header">
+          <h1 className="font-mono text-xl font-bold tracking-wide">
+            <a href="/" className="hover:opacity-80">&gt;</a>{' '}
+            <span className="uppercase">{project.name}_</span>
+          </h1>
+          <span className="font-mono text-xs text-t-muted uppercase tracking-widest">
+            {beads.length} beads // {beads.filter(b => b.issue_type === 'epic').length} epics // {beads.filter(b => isBlocked(b)).length} blocked
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-4 py-2">
+          <Button variant="ghost" size="icon" asChild>
+            <a href="/">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">Back to projects</span>
+            </a>
+          </Button>
+          <EditableProjectName
+            projectId={project.id}
+            initialName={project.name}
+            onNameUpdated={refetchProject}
+          />
+        </div>
+      )}
 
       {/* Quick Filter Bar */}
       <div className="flex justify-center px-4 pb-3">
@@ -317,6 +334,8 @@ export default function KanbanBoard() {
           // Agents
           isAgentsOpen={isAgentsOpen}
           onAgentsToggle={() => setIsAgentsOpen((prev) => !prev)}
+          // Filesystem features require a real project path
+          hasProjectPath={!isDoltOnly}
           // Unknown status warning
           unknownStatusCount={unknownStatusBeads.length}
           unknownStatusNames={unknownStatusNames}
@@ -386,9 +405,9 @@ export default function KanbanBoard() {
       )}
       </ErrorBoundary>
 
-      {/* Memory Panel */}
+      {/* Memory Panel (requires filesystem path) */}
       <ErrorBoundary label="Memory Panel">
-      {project?.path && (
+      {project?.path && !isDoltOnly && (
         <MemoryPanel
           open={isMemoryOpen}
           onOpenChange={setIsMemoryOpen}
@@ -398,9 +417,9 @@ export default function KanbanBoard() {
       )}
       </ErrorBoundary>
 
-      {/* Agents Panel */}
+      {/* Agents Panel (requires filesystem path) */}
       <ErrorBoundary label="Agents Panel">
-      {project?.path && (
+      {project?.path && !isDoltOnly && (
         <AgentsPanel
           open={isAgentsOpen}
           onOpenChange={setIsAgentsOpen}
