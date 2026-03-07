@@ -31,15 +31,15 @@ export interface KanbanColumnProps {
 function getColumnAccentBorder(status: BeadStatus): string {
   switch (status) {
     case "open":
-      return "border-t-2 border-t-blue-500/60";
+      return "border-t-2 border-t-status-open/60";
     case "in_progress":
-      return "border-t-2 border-t-amber-500/60";
+      return "border-t-2 border-t-status-progress/60";
     case "inreview":
-      return "border-t-2 border-t-cyan-500/60";
+      return "border-t-2 border-t-status-review/60";
     case "closed":
-      return "border-t-2 border-t-green-500/60";
+      return "border-t-2 border-t-status-closed/60";
     default:
-      return "border-t-2 border-t-zinc-500/60";
+      return "border-t-2 border-t-t-muted/60";
   }
 }
 
@@ -49,15 +49,15 @@ function getColumnAccentBorder(status: BeadStatus): string {
 function getHeaderTextColor(status: BeadStatus): string {
   switch (status) {
     case "open":
-      return "text-blue-400";
+      return "text-status-open";
     case "in_progress":
-      return "text-amber-400";
+      return "text-status-progress";
     case "inreview":
-      return "text-cyan-400";
+      return "text-status-review";
     case "closed":
-      return "text-green-400";
+      return "text-status-closed";
     default:
-      return "text-zinc-400";
+      return "text-t-tertiary";
   }
 }
 
@@ -67,15 +67,15 @@ function getHeaderTextColor(status: BeadStatus): string {
 function getBadgeVariant(status: BeadStatus): string {
   switch (status) {
     case "open":
-      return "bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/20";
+      return "bg-status-open/20 text-status-open border-status-open/30 hover:bg-status-open/20";
     case "in_progress":
-      return "bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/20";
+      return "bg-status-progress/20 text-status-progress border-status-progress/30 hover:bg-status-progress/20";
     case "inreview":
-      return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20";
+      return "bg-status-review/20 text-status-review border-status-review/30 hover:bg-status-review/20";
     case "closed":
-      return "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/20";
+      return "bg-status-closed/20 text-status-closed border-status-closed/30 hover:bg-status-closed/20";
     default:
-      return "bg-zinc-500/20 text-zinc-400 border-zinc-500/30 hover:bg-zinc-500/20";
+      return "bg-t-muted/20 text-t-tertiary border-t-muted/30 hover:bg-t-muted/20";
   }
 }
 
@@ -107,12 +107,12 @@ export function KanbanColumn({
     <div
       className={cn(
         "flex flex-col h-full min-h-0 rounded-lg",
-        "bg-zinc-900/30 border border-zinc-800/50"
+        "bg-surface-raised/30 border border-b-default/50"
       )}
     >
       {/* Column Header - fixed height with colored accent border */}
       <div className={cn(
-        "flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-zinc-800/50",
+        "flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-b-default/50",
         getColumnAccentBorder(status)
       )}>
         <h2 className={cn("font-semibold text-sm", getHeaderTextColor(status))}>{title}</h2>
@@ -157,9 +157,9 @@ export function KanbanColumn({
             );
           })}
           {beads.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-zinc-700/50 rounded-lg">
-              <PackageOpen className="size-8 text-zinc-500 mb-2" aria-hidden="true" />
-              <span className="text-zinc-500 text-sm">No beads</span>
+            <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-b-strong/50 rounded-lg">
+              <PackageOpen className="size-8 text-t-muted mb-2" aria-hidden="true" />
+              <span className="text-t-muted text-sm">No beads</span>
             </div>
           )}
         </div>

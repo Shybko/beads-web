@@ -45,15 +45,15 @@ export function formatStatus(status: BeadStatus): string {
 export function getStatusDotColor(status: BeadStatus): string {
   switch (status) {
     case "open":
-      return "text-blue-400";
+      return "text-status-open";
     case "in_progress":
-      return "text-amber-400";
+      return "text-status-progress";
     case "inreview":
-      return "text-purple-400";
+      return "text-status-review";
     case "closed":
-      return "text-green-400";
+      return "text-status-closed";
     default:
-      return "text-zinc-400";
+      return "text-t-tertiary";
   }
 }
 

@@ -187,7 +187,7 @@ export function BeadDetail({
       {/* Slide-in panel */}
       <div
         className={cn(
-          "fixed inset-y-0 right-0 z-50 w-full sm:max-w-lg md:max-w-xl overflow-y-auto bg-[#0a0a0a] border-l border-zinc-800 p-6 shadow-lg transition-transform duration-300 ease-in-out",
+          "fixed inset-y-0 right-0 z-50 w-full sm:max-w-lg md:max-w-xl overflow-y-auto bg-surface-base border-l border-b-default p-6 shadow-lg transition-transform duration-300 ease-in-out",
           open ? "translate-x-0" : "translate-x-full",
           isDesignDocFullScreen && "invisible"
         )}
@@ -207,9 +207,9 @@ export function BeadDetail({
 
           <div className="space-y-4">
             {/* Ticket Number + Bead ID */}
-            <p className="text-xs font-mono text-zinc-500">
+            <p className="text-xs font-mono text-t-muted">
               {ticketNumber !== undefined && (
-                <CopyableText copyText={`#${ticketNumber}`} className="font-semibold text-zinc-200">
+                <CopyableText copyText={`#${ticketNumber}`} className="font-semibold text-t-secondary">
                   #{ticketNumber}
                 </CopyableText>
               )}
@@ -220,7 +220,7 @@ export function BeadDetail({
             </p>
 
             {/* Title */}
-            <h2 className="text-xl font-semibold leading-tight text-zinc-100">
+            <h2 className="text-xl font-semibold leading-tight text-t-primary">
               <EditableField
                 value={bead.title}
                 onSave={handleSaveTitle}
@@ -231,7 +231,7 @@ export function BeadDetail({
             {/* Worktree path */}
             {bead.issue_type !== "epic" && hasWorktree && worktreeStatus?.worktree_path && (
               <div className={cn(
-                "font-mono text-xs text-zinc-500",
+                "font-mono text-xs text-t-muted",
                 bead.status === "closed" && "opacity-40"
               )}>
                 {formatWorktreePath(worktreeStatus.worktree_path)}
@@ -240,7 +240,7 @@ export function BeadDetail({
           </div>
 
           {/* Inline Metadata Row */}
-          <div className="mt-6 flex justify-center items-center gap-3 text-sm text-zinc-400">
+          <div className="mt-6 flex justify-center items-center gap-3 text-sm text-t-tertiary">
             <span className="flex items-center gap-1.5">
               {bead.issue_type === "epic" ? (
                 <Layers className="size-3.5" aria-hidden="true" />
@@ -249,7 +249,7 @@ export function BeadDetail({
               )}
               <span className="capitalize">{bead.issue_type}</span>
             </span>
-            <span className="text-zinc-600" aria-hidden="true">•</span>
+            <span className="text-t-faint" aria-hidden="true">•</span>
             <span className="flex items-center gap-1.5">
               <Circle className={cn("size-2 fill-current", getStatusDotColor(bead.status))} aria-hidden="true" />
               {isReadOnly ? (
@@ -258,7 +258,7 @@ export function BeadDetail({
                 <select
                   value={bead.status}
                   onChange={handleStatusChange}
-                  className="bg-transparent border-none text-sm text-zinc-400 cursor-pointer hover:text-zinc-200 focus:outline-none appearance-none"
+                  className="bg-transparent border-none text-sm text-t-tertiary cursor-pointer hover:text-t-secondary focus:outline-none appearance-none"
                 >
                   <option value="open">Open</option>
                   <option value="in_progress">In Progress</option>
@@ -267,7 +267,7 @@ export function BeadDetail({
                 </select>
               )}
             </span>
-            <span className="text-zinc-600" aria-hidden="true">•</span>
+            <span className="text-t-faint" aria-hidden="true">•</span>
             <span className="flex items-center gap-1.5">
               <Calendar className="size-3.5" aria-hidden="true" />
               <span>{formatShortDate(bead.created_at)}</span>
@@ -288,9 +288,9 @@ export function BeadDetail({
           {/* Description */}
           {(bead.description || !isReadOnly) && (
             <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-2 text-zinc-200">Description</h3>
-              <div className="h-px bg-zinc-800 mb-3" />
-              <div className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">
+              <h3 className="text-sm font-semibold mb-2 text-t-secondary">Description</h3>
+              <div className="h-px bg-b-default mb-3" />
+              <div className="text-sm text-t-tertiary leading-relaxed whitespace-pre-wrap">
                 <EditableField
                   value={bead.description ?? ""}
                   onSave={handleSaveDescription}
@@ -305,12 +305,12 @@ export function BeadDetail({
           {/* Related Tasks */}
           {relatedTasks.length > 0 && onChildClick && (
             <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-2 text-zinc-200 flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold mb-2 text-t-secondary flex items-center gap-1.5">
                 <Link2 className="size-3.5" aria-hidden="true" />
                 Related Tasks ({relatedTasks.length})
               </h3>
-              <div className="h-px bg-zinc-800 mb-3" />
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+              <div className="h-px bg-b-default mb-3" />
+              <div className="rounded-lg border border-b-default bg-surface-raised/50 p-3">
                 <div className="space-y-1">
                   {relatedTasks.map((related) => (
                     <button
@@ -319,8 +319,8 @@ export function BeadDetail({
                       aria-label={`Open related task: ${related.title}`}
                       className={cn(
                         "w-full flex items-center gap-2 px-2 py-1.5 rounded-md",
-                        "hover:bg-zinc-800 transition-colors text-left",
-                        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400",
+                        "hover:bg-b-default transition-colors text-left",
+                        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-t-tertiary",
                         "group"
                       )}
                     >
@@ -328,12 +328,12 @@ export function BeadDetail({
                         className={cn("size-2 flex-shrink-0 fill-current", getStatusDotColor(related.status))}
                         aria-hidden="true"
                       />
-                      <span className="text-[10px] font-mono text-zinc-500 flex-shrink-0">
+                      <span className="text-[10px] font-mono text-t-muted flex-shrink-0">
                         {formatBeadId(related.id)}
                       </span>
                       <span className={cn(
                         "text-xs font-medium flex-1 min-w-0 truncate group-hover:underline",
-                        related.status === "closed" ? "line-through text-zinc-500" : "text-zinc-200"
+                        related.status === "closed" ? "line-through text-t-muted" : "text-t-secondary"
                       )}>
                         {related.title}
                       </span>
@@ -350,11 +350,11 @@ export function BeadDetail({
           {/* Subtasks (for epics) */}
           {isEpic && onChildClick && (
             <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-2 text-zinc-200">
+              <h3 className="text-sm font-semibold mb-2 text-t-secondary">
                 Subtasks ({childTasks.length})
               </h3>
-              <div className="h-px bg-zinc-800 mb-3" />
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+              <div className="h-px bg-b-default mb-3" />
+              <div className="rounded-lg border border-b-default bg-surface-raised/50 p-3">
                 <SubtaskList
                   childTasks={childTasks}
                   onChildClick={onChildClick}
@@ -368,7 +368,7 @@ export function BeadDetail({
           {/* Design Document */}
           {hasDesignDoc && projectPath && (
             <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-3 text-zinc-200">Design Document</h3>
+              <h3 className="text-sm font-semibold mb-3 text-t-secondary">Design Document</h3>
               <DesignDocViewer
                 designDocPath={bead.design_doc!}
                 epicId={formatBeadId(bead.id)}

@@ -36,11 +36,11 @@ export interface BeadCardProps {
 function getWorktreeStatusColor(worktreeStatus?: WorktreeStatus, prStatus?: PRStatus, beadStatus?: string): string {
   // Closed beads should not show colored status badges
   if (beadStatus === 'closed') {
-    return "bg-zinc-800/50 border-zinc-700/50";
+    return "bg-surface-overlay/50 border-b-default/50";
   }
 
   if (!worktreeStatus?.exists) {
-    return "bg-zinc-800/50 border-zinc-700/50";
+    return "bg-surface-overlay/50 border-b-default/50";
   }
 
   // Check PR status first
@@ -48,19 +48,19 @@ function getWorktreeStatusColor(worktreeStatus?: WorktreeStatus, prStatus?: PRSt
     const { state, checks } = prStatus.pr;
 
     if (state === "merged") {
-      return "bg-green-500/10 border-green-600/30";
+      return "bg-success/10 border-success/30";
     }
 
     if (checks.status === "success") {
-      return "bg-green-500/10 border-green-600/30";
+      return "bg-success/10 border-success/30";
     }
 
     if (checks.status === "pending") {
-      return "bg-amber-500/10 border-amber-600/30";
+      return "bg-warning/10 border-warning/30";
     }
 
     if (checks.status === "failure") {
-      return "bg-red-500/10 border-red-600/30";
+      return "bg-danger/10 border-danger/30";
     }
   }
 
@@ -69,15 +69,15 @@ function getWorktreeStatusColor(worktreeStatus?: WorktreeStatus, prStatus?: PRSt
 
   if (ahead > 0 && behind > 0) {
     // Needs rebase - red
-    return "bg-red-500/10 border-red-600/30";
+    return "bg-danger/10 border-danger/30";
   }
 
   if (ahead > 0 && behind === 0) {
     // Ready to push/PR - green
-    return "bg-green-500/10 border-green-600/30";
+    return "bg-success/10 border-success/30";
   }
 
-  return "bg-zinc-800/50 border-zinc-700/50";
+  return "bg-surface-overlay/50 border-b-default/50";
 }
 
 /**
@@ -94,7 +94,7 @@ function getPRChecksDisplay(prStatus: PRStatus): { icon: React.ReactNode; text: 
     return {
       icon: <Check className="size-3" aria-hidden="true" />,
       text: "Merged",
-      className: "text-green-400"
+      className: "text-success"
     };
   }
 
@@ -105,7 +105,7 @@ function getPRChecksDisplay(prStatus: PRStatus): { icon: React.ReactNode; text: 
     return {
       icon: <Check className="size-3" aria-hidden="true" />,
       text: checksText,
-      className: "text-green-400"
+      className: "text-success"
     };
   }
 
@@ -113,7 +113,7 @@ function getPRChecksDisplay(prStatus: PRStatus): { icon: React.ReactNode; text: 
     return {
       icon: <Clock className="size-3" aria-hidden="true" />,
       text: checksText,
-      className: "text-amber-400"
+      className: "text-warning"
     };
   }
 
@@ -121,11 +121,11 @@ function getPRChecksDisplay(prStatus: PRStatus): { icon: React.ReactNode; text: 
     return {
       icon: <X className="size-3" aria-hidden="true" />,
       text: checksText,
-      className: "text-red-400"
+      className: "text-danger"
     };
   }
 
-  return { icon: null, text: checksText, className: "text-zinc-400" };
+  return { icon: null, text: checksText, className: "text-t-tertiary" };
 }
 
 /**
@@ -142,11 +142,11 @@ function getTypeLabel(bead: Bead): string {
 function getStatusBadgeClasses(variant: StatusBadgeInfo['variant']): string {
   switch (variant) {
     case 'warning':
-      return 'bg-orange-500/15 text-orange-400 border-orange-600/30';
+      return 'bg-blocked-accent/15 text-blocked-accent border-blocked-accent/30';
     case 'muted':
-      return 'bg-zinc-500/15 text-zinc-400 border-zinc-600/30';
+      return 'bg-t-muted/15 text-t-tertiary border-t-muted/30';
     case 'info':
-      return 'bg-blue-500/15 text-blue-400 border-blue-600/30';
+      return 'bg-info/15 text-info border-info/30';
   }
 }
 
@@ -175,7 +175,7 @@ export function BeadCard({ bead, ticketNumber, worktreeStatus, prStatus, isSelec
         "hover:-translate-y-0.5 hover:border-border",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         // Type-based left border accent (blocked uses red, otherwise muted accent)
-        blocked ? "border-l-4 border-l-red-500" : "border-l-2 border-l-muted-foreground/30",
+        blocked ? "border-l-4 border-l-danger" : "border-l-2 border-l-muted-foreground/30",
         // Selected state
         isSelected && "ring-2 ring-ring ring-offset-2 ring-offset-background"
       )}

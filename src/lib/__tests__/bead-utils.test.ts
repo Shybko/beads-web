@@ -46,10 +46,10 @@ describe('formatStatus', () => {
 
 describe('getStatusDotColor', () => {
   it('returns correct color classes', () => {
-    expect(getStatusDotColor('open')).toContain('blue');
-    expect(getStatusDotColor('in_progress')).toContain('amber');
-    expect(getStatusDotColor('inreview')).toContain('purple');
-    expect(getStatusDotColor('closed')).toContain('green');
+    expect(getStatusDotColor('open')).toContain('status-open');
+    expect(getStatusDotColor('in_progress')).toContain('status-progress');
+    expect(getStatusDotColor('inreview')).toContain('status-review');
+    expect(getStatusDotColor('closed')).toContain('status-closed');
   });
 });
 

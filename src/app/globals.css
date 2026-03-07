@@ -30,20 +30,71 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
 
-    /* Beads Status colors (HSL) */
+    /* ===== Beads Semantic Colors (HSL values) ===== */
+
+    /* Surface: backgrounds for layered UI */
+    --surface-base: 0 0% 4%;         /* deepest bg: body, panels */
+    --surface-raised: 240 6% 10%;    /* cards, columns */
+    --surface-overlay: 240 5% 14%;   /* dropdowns, popovers, inputs */
+    --surface-inset: 240 5% 17%;     /* inset areas, hover states */
+
+    /* Text: 5-level hierarchy */
+    --text-primary: 0 0% 96%;        /* headings, important */
+    --text-secondary: 0 0% 87%;      /* body, labels */
+    --text-tertiary: 0 0% 73%;       /* descriptions, secondary info */
+    --text-muted: 0 0% 60%;          /* placeholders, hints */
+    --text-faint: 0 0% 40%;          /* separators, barely visible */
+
+    /* Border: 3-level hierarchy */
+    --border-default: 240 4% 16%;    /* standard borders */
+    --border-subtle: 240 4% 12%;     /* faint dividers */
+    --border-strong: 240 4% 24%;     /* hover, focused borders */
+
+    /* Status: kanban column colors */
     --status-open: 217 91% 60%;
-    --status-in_progress: 38 92% 50%;
-    --status-inreview: 271 81% 56%;
+    --status-progress: 38 92% 50%;
+    --status-review: 192 91% 55%;
     --status-closed: 142 71% 45%;
 
-    /* Beads Priority colors (HSL) */
+    /* Semantic: feedback colors */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --danger: 0 84% 60%;
+    --info: 217 91% 60%;
+
+    /* Feature: domain-specific */
+    --epic: 271 81% 56%;
+    --blocked-accent: 25 95% 53%;
+
+    /* Priority colors */
     --priority-p0: 0 84% 60%;
     --priority-p1: 25 95% 53%;
     --priority-p2: 240 5% 65%;
     --priority-p3: 240 5% 84%;
     --priority-p4: 240 5% 84%;
 
-    /* Beads Accents (HSL) */
+    /* Progress bar colors */
+    --progress-100: 142 71% 45%;
+    --progress-75: 142 71% 45%;
+    --progress-50: 217 91% 60%;
+    --progress-25: 38 92% 50%;
+    --progress-0: 271 81% 56%;
+
+    /* Activity timeline event colors */
+    --event-created: 142 71% 45%;
+    --event-status: 217 91% 60%;
+    --event-comment: 0 0% 60%;
+    --event-branch: 271 81% 56%;
+    --event-child: 192 91% 55%;
+
+    /* File diff colors */
+    --diff-added: 142 71% 45%;
+    --diff-removed: 0 84% 60%;
+    --diff-renamed: 38 92% 50%;
+
+    /* Legacy Beads vars (kept for compatibility) */
+    --status-in_progress: 38 92% 50%;
+    --status-inreview: 271 81% 56%;
     --blocked: 0 84% 60%;
     --branch: 142 76% 36%;
 

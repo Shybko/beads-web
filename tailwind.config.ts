@@ -50,14 +50,50 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        // Beads Status colors
+
+        // Surface: layered backgrounds
+        surface: {
+          base: 'hsl(var(--surface-base))',
+          raised: 'hsl(var(--surface-raised))',
+          overlay: 'hsl(var(--surface-overlay))',
+          inset: 'hsl(var(--surface-inset))',
+        },
+
+        // Text hierarchy (use with text-t-*, bg-t-* etc.)
+        t: {
+          primary: 'hsl(var(--text-primary))',
+          secondary: 'hsl(var(--text-secondary))',
+          tertiary: 'hsl(var(--text-tertiary))',
+          muted: 'hsl(var(--text-muted))',
+          faint: 'hsl(var(--text-faint))',
+        },
+
+        // Border hierarchy
+        b: {
+          default: 'hsl(var(--border-default))',
+          subtle: 'hsl(var(--border-subtle))',
+          strong: 'hsl(var(--border-strong))',
+        },
+
+        // Status: kanban column colors
         status: {
           open: 'hsl(var(--status-open))',
-          inprogress: 'hsl(var(--status-inprogress))',
-          inreview: 'hsl(var(--status-inreview))',
-          done: 'hsl(var(--status-done))',
+          progress: 'hsl(var(--status-progress))',
+          review: 'hsl(var(--status-review))',
+          closed: 'hsl(var(--status-closed))',
         },
-        // Beads Priority colors
+
+        // Semantic feedback
+        success: 'hsl(var(--success))',
+        warning: 'hsl(var(--warning))',
+        danger: 'hsl(var(--danger))',
+        info: 'hsl(var(--info))',
+
+        // Feature-specific
+        epic: 'hsl(var(--epic))',
+        'blocked-accent': 'hsl(var(--blocked-accent))',
+
+        // Priority colors
         priority: {
           p0: 'hsl(var(--priority-p0))',
           p1: 'hsl(var(--priority-p1))',
@@ -65,7 +101,33 @@ const config: Config = {
           p3: 'hsl(var(--priority-p3))',
           p4: 'hsl(var(--priority-p4))',
         },
-        // Beads Accents
+
+        // Progress bar
+        progress: {
+          100: 'hsl(var(--progress-100))',
+          75: 'hsl(var(--progress-75))',
+          50: 'hsl(var(--progress-50))',
+          25: 'hsl(var(--progress-25))',
+          0: 'hsl(var(--progress-0))',
+        },
+
+        // Activity events
+        event: {
+          created: 'hsl(var(--event-created))',
+          status: 'hsl(var(--event-status))',
+          comment: 'hsl(var(--event-comment))',
+          branch: 'hsl(var(--event-branch))',
+          child: 'hsl(var(--event-child))',
+        },
+
+        // File diff
+        diff: {
+          added: 'hsl(var(--diff-added))',
+          removed: 'hsl(var(--diff-removed))',
+          renamed: 'hsl(var(--diff-renamed))',
+        },
+
+        // Legacy (kept for compatibility)
         blocked: 'hsl(var(--blocked))',
         branch: 'hsl(var(--branch))',
       },

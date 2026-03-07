@@ -34,14 +34,14 @@ export interface SubtaskListProps {
 function getStatusIcon(status: BeadStatus) {
   switch (status) {
     case 'closed':
-      return <Check className="h-3.5 w-3.5 text-green-400" aria-hidden="true" />;
+      return <Check className="h-3.5 w-3.5 text-status-closed" aria-hidden="true" />;
     case 'in_progress':
-      return <Clock className="h-3.5 w-3.5 text-blue-400" aria-hidden="true" />;
+      return <Clock className="h-3.5 w-3.5 text-status-progress" aria-hidden="true" />;
     case 'inreview':
-      return <FileCheck className="h-3.5 w-3.5 text-purple-400" aria-hidden="true" />;
+      return <FileCheck className="h-3.5 w-3.5 text-status-review" aria-hidden="true" />;
     case 'open':
     default:
-      return <Circle className="h-3.5 w-3.5 text-zinc-500" aria-hidden="true" />;
+      return <Circle className="h-3.5 w-3.5 text-t-muted" aria-hidden="true" />;
   }
 }
 
@@ -51,14 +51,14 @@ function getStatusIcon(status: BeadStatus) {
 function getStatusColor(status: BeadStatus): string {
   switch (status) {
     case 'closed':
-      return "text-green-400";
+      return "text-status-closed";
     case 'in_progress':
-      return "text-blue-400";
+      return "text-status-progress";
     case 'inreview':
-      return "text-purple-400";
+      return "text-status-review";
     case 'open':
     default:
-      return "text-zinc-500";
+      return "text-t-muted";
   }
 }
 
@@ -77,7 +77,7 @@ function getPRStatusInfo(prStatus: ChildPRStatus | undefined): { icon: React.Rea
     return {
       icon: (
         <GitMerge
-          className="h-3.5 w-3.5 text-purple-400"
+          className="h-3.5 w-3.5 text-epic"
           aria-hidden="true"
         />
       ),
@@ -91,7 +91,7 @@ function getPRStatusInfo(prStatus: ChildPRStatus | undefined): { icon: React.Rea
       return {
         icon: (
           <GitPullRequest
-            className="h-3.5 w-3.5 text-green-400"
+            className="h-3.5 w-3.5 text-success"
             aria-hidden="true"
           />
         ),
@@ -102,7 +102,7 @@ function getPRStatusInfo(prStatus: ChildPRStatus | undefined): { icon: React.Rea
       return {
         icon: (
           <GitPullRequest
-            className="h-3.5 w-3.5 text-red-400"
+            className="h-3.5 w-3.5 text-danger"
             aria-hidden="true"
           />
         ),
@@ -113,7 +113,7 @@ function getPRStatusInfo(prStatus: ChildPRStatus | undefined): { icon: React.Rea
     return {
       icon: (
         <GitPullRequest
-          className="h-3.5 w-3.5 text-amber-400"
+          className="h-3.5 w-3.5 text-warning"
           aria-hidden="true"
         />
       ),
@@ -179,8 +179,8 @@ export function SubtaskList({
           aria-label={`Open task: ${child.title}`}
           className={cn(
             "w-full flex items-start gap-2 px-2 py-1.5 rounded-md",
-            "hover:bg-zinc-800 transition-colors text-left",
-            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400",
+            "hover:bg-surface-overlay transition-colors text-left",
+            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-t-tertiary",
             "group"
           )}
         >
@@ -191,13 +191,13 @@ export function SubtaskList({
           <div className="flex-1 min-w-0">
             <p className={cn(
               "text-xs font-medium group-hover:underline",
-              child.status === 'closed' && "line-through text-zinc-500",
-              child.status !== 'closed' && "text-zinc-200"
+              child.status === 'closed' && "line-through text-t-muted",
+              child.status !== 'closed' && "text-t-secondary"
             )}>
               {truncate(child.title, 50)}
             </p>
             {child.description && (
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <p className="text-[10px] text-t-muted mt-0.5">
                 {truncate(child.description, 60)}
               </p>
             )}

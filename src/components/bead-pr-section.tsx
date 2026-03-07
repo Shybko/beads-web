@@ -46,7 +46,7 @@ function getChecksStatusDisplay(checks: PRChecks): {
     return {
       icon: <Check className="size-4" aria-hidden="true" />,
       text: checksText,
-      className: "text-green-400",
+      className: "text-success",
     };
   }
 
@@ -54,7 +54,7 @@ function getChecksStatusDisplay(checks: PRChecks): {
     return {
       icon: <Clock className="size-4" aria-hidden="true" />,
       text: checksText,
-      className: "text-amber-400",
+      className: "text-warning",
     };
   }
 
@@ -62,11 +62,11 @@ function getChecksStatusDisplay(checks: PRChecks): {
     return {
       icon: <X className="size-4" aria-hidden="true" />,
       text: checksText,
-      className: "text-red-400",
+      className: "text-danger",
     };
   }
 
-  return { icon: null, text: checksText, className: "text-zinc-400" };
+  return { icon: null, text: checksText, className: "text-t-tertiary" };
 }
 
 export interface BeadPRSectionProps {
@@ -279,7 +279,7 @@ export function BeadPRSection({
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-zinc-200">Worktree & PR</h3>
+        <h3 className="text-sm font-semibold text-t-secondary">Worktree & PR</h3>
         <Button
           variant="ghost"
           size="sm"
@@ -295,11 +295,11 @@ export function BeadPRSection({
           <RefreshCw className={cn("size-3.5", (isPRStatusLoading || isRefreshingPR) && "animate-spin")} />
         </Button>
       </div>
-      <div className="h-px bg-zinc-800 mb-3" />
+      <div className="h-px bg-b-default mb-3" />
 
       {/* Loading */}
       {isPRStatusLoading && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+        <div className="rounded-lg border border-b-default bg-surface-raised/50 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Skeleton className="size-4 rounded" />
@@ -313,23 +313,23 @@ export function BeadPRSection({
 
       {/* Error */}
       {actionError && (
-        <div role="alert" className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
-          <p className="text-sm text-red-400">{actionError}</p>
+        <div role="alert" className="mb-3 rounded-lg border border-danger/30 bg-danger/10 p-3">
+          <p className="text-sm text-danger">{actionError}</p>
         </div>
       )}
 
       {/* No remote */}
       {!isPRStatusLoading && prStatus && !prStatus.has_remote && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-          <p className="text-sm text-zinc-400">No remote configured. Push to a remote to enable PR features.</p>
+        <div className="rounded-lg border border-b-default bg-surface-raised/50 p-4">
+          <p className="text-sm text-t-tertiary">No remote configured. Push to a remote to enable PR features.</p>
         </div>
       )}
 
       {/* Branch not pushed */}
       {!isPRStatusLoading && prStatus?.has_remote && !prStatus.branch_pushed && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+        <div className="rounded-lg border border-b-default bg-surface-raised/50 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-zinc-400">Branch not pushed to remote</p>
+            <p className="text-sm text-t-tertiary">Branch not pushed to remote</p>
             <Button variant="outline" size="sm" className="gap-1.5" disabled>
               <Upload className="size-3.5" aria-hidden="true" />
               Push Branch
@@ -340,9 +340,9 @@ export function BeadPRSection({
 
       {/* No PR yet */}
       {!isPRStatusLoading && prStatus?.has_remote && prStatus.branch_pushed && !prStatus.pr && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+        <div className="rounded-lg border border-b-default bg-surface-raised/50 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-zinc-400">No pull request created yet</p>
+            <p className="text-sm text-t-tertiary">No pull request created yet</p>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -374,14 +374,14 @@ export function BeadPRSection({
 
       {/* PR exists */}
       {!isPRStatusLoading && prStatus?.pr && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 space-y-4">
+        <div className="rounded-lg border border-b-default bg-surface-raised/50 p-4 space-y-4">
           {/* PR Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <GitPullRequest className="size-4 text-zinc-400" aria-hidden="true" />
-              <span className="text-sm font-medium text-zinc-200">PR #{prStatus.pr.number}</span>
+              <GitPullRequest className="size-4 text-t-tertiary" aria-hidden="true" />
+              <span className="text-sm font-medium text-t-secondary">PR #{prStatus.pr.number}</span>
               {prStatus.pr.state === "merged" && (
-                <Badge className="text-[10px] px-1.5 py-0 bg-purple-500/20 text-purple-400 border border-purple-500/30">Merged</Badge>
+                <Badge className="text-[10px] px-1.5 py-0 bg-epic/20 text-epic border border-epic/30">Merged</Badge>
               )}
             </div>
             <div className={cn("flex items-center gap-1", getChecksStatusDisplay(prStatus.pr.checks).className)}>
@@ -393,22 +393,22 @@ export function BeadPRSection({
           {/* CI Checks */}
           {prStatus.pr.checks.total > 0 && prStatus.pr.state !== "merged" && (
             <div className="space-y-2">
-              <span className="text-xs text-zinc-500">Checks</span>
+              <span className="text-xs text-t-muted">Checks</span>
               <div className="flex items-center gap-4 text-xs">
                 {prStatus.pr.checks.passed > 0 && (
-                  <span className="flex items-center gap-1 text-green-400">
+                  <span className="flex items-center gap-1 text-success">
                     <Check className="size-3" aria-hidden="true" />
                     {prStatus.pr.checks.passed} passed
                   </span>
                 )}
                 {prStatus.pr.checks.failed > 0 && (
-                  <span className="flex items-center gap-1 text-red-400">
+                  <span className="flex items-center gap-1 text-danger">
                     <X className="size-3" aria-hidden="true" />
                     {prStatus.pr.checks.failed} failed
                   </span>
                 )}
                 {prStatus.pr.checks.pending > 0 && (
-                  <span className="flex items-center gap-1 text-amber-400">
+                  <span className="flex items-center gap-1 text-warning">
                     <Clock className="size-3" aria-hidden="true" />
                     {prStatus.pr.checks.pending} pending
                   </span>
@@ -447,14 +447,14 @@ export function BeadPRSection({
             </Button>
 
             {prStatus.pr.state === "open" && !prStatus.pr.mergeable && (
-              <span className="flex items-center gap-1.5 text-xs text-red-400">
+              <span className="flex items-center gap-1.5 text-xs text-danger">
                 <AlertTriangle className="size-3" aria-hidden="true" />
                 Merge conflicts
               </span>
             )}
 
             {prStatus.pr.state === "open" && isCheckingCI && (
-              <span role="status" aria-live="polite" className="flex items-center gap-1.5 text-xs text-zinc-500">
+              <span role="status" aria-live="polite" className="flex items-center gap-1.5 text-xs text-t-muted">
                 <Loader2 className="size-3 animate-spin" aria-hidden="true" />
                 Checking CI status…
               </span>
@@ -464,7 +464,7 @@ export function BeadPRSection({
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 border-green-600/30 text-green-400 hover:bg-green-500/10"
+                className="gap-1.5 border-success/30 text-success hover:bg-success/10"
                 onClick={handleMergePR}
                 disabled={isMergingPR}
               >
@@ -481,7 +481,7 @@ export function BeadPRSection({
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 border-zinc-600/30 text-zinc-400 hover:bg-zinc-500/10"
+                className="gap-1.5 border-b-strong/30 text-t-tertiary hover:bg-surface-overlay/10"
                 onClick={() => handleCleanUp()}
                 disabled={isCleaningUp}
               >
@@ -496,7 +496,7 @@ export function BeadPRSection({
           </div>
 
           {isRebasingSiblings && (
-            <div role="status" aria-live="polite" className="flex items-center gap-2 pt-2 text-xs text-zinc-400">
+            <div role="status" aria-live="polite" className="flex items-center gap-2 pt-2 text-xs text-t-tertiary">
               <Loader2 className="size-3 animate-spin" aria-hidden="true" />
               <span>Rebasing other branches...</span>
             </div>

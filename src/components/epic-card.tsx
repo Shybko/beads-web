@@ -51,11 +51,11 @@ function computeProgress(epic: Epic, allBeads: Bead[]): EpicProgress {
  * Get progress bar indicator color based on completion percentage
  */
 function getProgressIndicatorClass(percentage: number): string {
-  if (percentage === 100) return "[&>*]:bg-green-500";
-  if (percentage >= 75) return "[&>*]:bg-green-500";
-  if (percentage >= 50) return "[&>*]:bg-blue-500";
-  if (percentage >= 25) return "[&>*]:bg-amber-500";
-  return "[&>*]:bg-purple-500";
+  if (percentage === 100) return "[&>*]:bg-progress-100";
+  if (percentage >= 75) return "[&>*]:bg-progress-75";
+  if (percentage >= 50) return "[&>*]:bg-progress-50";
+  if (percentage >= 25) return "[&>*]:bg-progress-25";
+  return "[&>*]:bg-progress-0";
 }
 
 /** Auto-refresh interval for PR statuses (30 seconds) */
@@ -187,14 +187,14 @@ export function EpicCard({
       aria-label={`Select epic: ${epic.title}`}
       className={cn(
         "rounded-lg cursor-pointer p-4",
-        "bg-zinc-900/70 backdrop-blur-md",
-        "border border-zinc-800/60 border-l-2 border-l-purple-500",
+        "bg-surface-raised/70 backdrop-blur-md",
+        "border border-b-default/60 border-l-2 border-l-epic",
         "shadow-sm shadow-black/20",
         "transition-[transform,box-shadow,border-color] duration-200",
         "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30",
-        "hover:border-zinc-700",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]",
-        isSelected && "ring-2 ring-purple-400 ring-offset-2 ring-offset-[#0a0a0a]"
+        "hover:border-b-strong",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-epic focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base",
+        isSelected && "ring-2 ring-epic ring-offset-2 ring-offset-surface-base"
       )}
       onClick={() => onSelect(epic)}
       onKeyDown={(e) => {
@@ -208,8 +208,8 @@ export function EpicCard({
         {/* Header: Ticket # + Epic Icon + ID + Dependencies */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-purple-400" aria-hidden="true" />
-            <span className="text-xs font-mono text-zinc-400">
+            <Layers className="h-4 w-4 text-epic" aria-hidden="true" />
+            <span className="text-xs font-mono text-t-tertiary">
               {ticketNumber !== undefined && (
                 <CopyableText copyText={`#${ticketNumber}`} className="font-semibold text-white">
                   #{ticketNumber}
@@ -229,7 +229,7 @@ export function EpicCard({
             />
             <Badge
               variant="outline"
-              className="text-[10px] px-2 py-0.5 border-purple-500/30 text-purple-400 bg-purple-500/20 font-semibold"
+              className="text-[10px] px-2 py-0.5 border-epic/30 text-epic bg-epic/20 font-semibold"
             >
               EPIC
             </Badge>
@@ -237,13 +237,13 @@ export function EpicCard({
         </div>
 
         {/* Title */}
-        <h3 className="font-bold text-base leading-tight text-purple-100">
+        <h3 className="font-bold text-base leading-tight text-t-primary">
           {truncate(epic.title, 60)}
         </h3>
 
         {/* Description */}
         {epic.description && (
-          <p className="text-xs text-zinc-400 leading-relaxed">
+          <p className="text-xs text-t-tertiary leading-relaxed">
             {truncate(epic.description, 100)}
           </p>
         )}
@@ -251,27 +251,27 @@ export function EpicCard({
         {/* Progress Bar */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-400">
+            <span className="text-t-tertiary">
               Progress: {progress.completed}/{progress.total} completed
             </span>
-            <span className="font-semibold text-zinc-300">{progressPercentage}%</span>
+            <span className="font-semibold text-t-secondary">{progressPercentage}%</span>
           </div>
           <Progress
             value={progressPercentage}
             aria-label={`Epic progress: ${progress.completed} of ${progress.total} completed`}
             className={cn(
-              "h-2 bg-zinc-800",
+              "h-2 bg-surface-overlay",
               getProgressIndicatorClass(progressPercentage)
             )}
           />
-          <div className="flex items-center gap-3 text-[10px] text-zinc-500">
+          <div className="flex items-center gap-3 text-[10px] text-t-muted">
             <span className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-blue-500" aria-hidden="true" />
+              <div className="w-2 h-2 rounded-full bg-status-open" aria-hidden="true" />
               {progress.inProgress} in progress
             </span>
             {progress.blocked > 0 && (
               <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true" />
+                <div className="w-2 h-2 rounded-full bg-danger" aria-hidden="true" />
                 {progress.blocked} blocked
               </span>
             )}
@@ -286,7 +286,7 @@ export function EpicCard({
               size="xs"
               onClick={handleCloseEpic}
               disabled={isClosing}
-              className="w-full border-green-500/30 text-green-400 hover:bg-green-500/10 hover:text-green-300"
+              className="w-full border-success/30 text-success hover:bg-success/10 hover:text-success/80"
             >
               {isClosing ? (
                 <Loader2 className="size-3 animate-spin" aria-hidden="true" />
@@ -300,7 +300,7 @@ export function EpicCard({
 
         {/* Design Doc Preview */}
         {hasDesignDoc && projectPath && (
-          <div className="pt-2 border-t border-zinc-700">
+          <div className="pt-2 border-t border-b-strong">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -308,7 +308,7 @@ export function EpicCard({
               }}
               aria-expanded={isDesignPreviewExpanded}
               aria-label={`${isDesignPreviewExpanded ? 'Collapse' : 'Expand'} design preview`}
-              className="flex items-center gap-1 text-xs font-semibold text-purple-400 hover:text-purple-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 rounded mb-2"
+              className="flex items-center gap-1 text-xs font-semibold text-epic hover:text-epic/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-epic focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised rounded mb-2"
             >
               {isDesignPreviewExpanded ? (
                 <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
@@ -328,7 +328,7 @@ export function EpicCard({
         )}
 
         {/* Children Preview/List */}
-        <div className="pt-2 border-t border-zinc-700">
+        <div className="pt-2 border-t border-b-strong">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -336,7 +336,7 @@ export function EpicCard({
             }}
             aria-expanded={isExpanded}
             aria-label={`${isExpanded ? 'Collapse' : 'Expand'} child tasks`}
-            className="flex items-center gap-1 text-xs font-semibold text-purple-400 hover:text-purple-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 rounded mb-2"
+            className="flex items-center gap-1 text-xs font-semibold text-epic hover:text-epic/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-epic focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised rounded mb-2"
           >
             {isExpanded ? (
               <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
