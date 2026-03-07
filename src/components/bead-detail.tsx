@@ -23,7 +23,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import * as api from "@/lib/api";
-import { updateTitle, updateDescription, updateStatus as cliUpdateStatus } from "@/lib/cli";
 import {
   formatBeadId,
   formatShortDate,
@@ -31,6 +30,7 @@ import {
   formatWorktreePath,
   getStatusDotColor,
 } from "@/lib/bead-utils";
+import { updateTitle, updateDescription, updateStatus as cliUpdateStatus } from "@/lib/cli";
 import { cn, isDoltProject } from "@/lib/utils";
 import type { Bead, WorktreeStatus } from "@/types";
 

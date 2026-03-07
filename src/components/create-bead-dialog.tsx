@@ -102,7 +102,7 @@ export function CreateBeadDialog({
     } finally {
       setIsSubmitting(false);
     }
-  }, [title, description, issueType, priority, projectPath, handleOpenChange, onCreated]);
+  }, [title, description, issueType, priority, projectPath, parentId, handleOpenChange, onCreated]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
