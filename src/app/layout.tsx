@@ -1,6 +1,5 @@
 import { Inter, Space_Grotesk, Space_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 
-import { DevTools } from '@/components/dev-tools';
 import { GlobalSettingsButton } from '@/components/global-settings-button';
 import { ThemeInitScript } from '@/components/theme-init';
 import { Toaster } from '@/components/ui/toaster';
@@ -52,7 +51,6 @@ export default function RootLayout({
         <div className="flex-1">{children}</div>
         <GlobalSettingsButton />
         <Toaster />
-        <DevTools />
       </body>
     </html>
   );

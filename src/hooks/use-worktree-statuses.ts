@@ -76,14 +76,19 @@ export function useWorktreeStatuses(
   // Track if initial load has completed
   const hasLoadedRef = useRef(false);
 
-  // Store previous bead IDs to detect changes
-  const prevBeadIdsRef = useRef<string[]>([]);
+  // Stabilize beadIds — only update ref when IDs actually change
+  const beadIdsRef = useRef<string[]>(beadIds);
+  const beadIdsKey = beadIds.join(",");
+  useEffect(() => {
+    beadIdsRef.current = beadIds;
+  }, [beadIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Load worktree statuses for all beads in parallel
    */
   const loadStatuses = useCallback(async () => {
-    if (!projectPath || beadIds.length === 0) {
+    const ids = beadIdsRef.current;
+    if (!projectPath || ids.length === 0) {
       setStatuses({});
       setIsLoading(false);
       return;
@@ -97,7 +102,7 @@ export function useWorktreeStatuses(
     try {
       // Fetch all worktree statuses in parallel (Promise.all pattern)
       const results = await Promise.all(
-        beadIds.map(async (beadId) => {
+        ids.map(async (beadId) => {
           try {
             const status = await api.git.worktreeStatus(projectPath, beadId);
             return { beadId, status };
@@ -124,7 +129,7 @@ export function useWorktreeStatuses(
     } finally {
       setIsLoading(false);
     }
-  }, [projectPath, beadIds]);
+  }, [projectPath]);
 
   /**
    * Public refresh function for manual reload
@@ -135,29 +140,20 @@ export function useWorktreeStatuses(
 
   // Load statuses when project path or bead IDs change
   useEffect(() => {
-    // Check if bead IDs have actually changed
-    const beadIdsChanged =
-      beadIds.length !== prevBeadIdsRef.current.length ||
-      beadIds.some((id, i) => id !== prevBeadIdsRef.current[i]);
-
-    if (beadIdsChanged) {
-      prevBeadIdsRef.current = [...beadIds];
-      hasLoadedRef.current = false;
-    }
-
+    hasLoadedRef.current = false;
     loadStatuses();
-  }, [loadStatuses, beadIds]);
+  }, [loadStatuses, beadIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Set up periodic refresh (polling)
   useEffect(() => {
-    if (!projectPath || beadIds.length === 0) return;
+    if (!projectPath || beadIdsRef.current.length === 0) return;
 
     const intervalId = setInterval(() => {
       loadStatuses();
     }, pollingInterval);
 
     return () => clearInterval(intervalId);
-  }, [projectPath, beadIds.length, loadStatuses, pollingInterval]);
+  }, [projectPath, loadStatuses, pollingInterval]);
 
   return {
     statuses,
