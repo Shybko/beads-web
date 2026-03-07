@@ -12,7 +12,7 @@ use axum::{
     extract::Extension,
     http::{header, Request, Response, StatusCode},
     response::IntoResponse,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Router,
 };
 use rust_embed::Embed;
@@ -122,6 +122,7 @@ async fn main() {
         .nest("/api", routes::project_routes().with_state(database))
         .route("/api/beads", get(routes::beads::read_beads))
         .route("/api/beads/create", post(routes::beads::create_bead_handler))
+        .route("/api/beads/update", patch(routes::beads::update_bead_handler))
         // Dolt endpoints
         .route("/api/dolt/status", get(routes::dolt::dolt_status))
         .route("/api/dolt/databases", get(routes::dolt::dolt_databases))

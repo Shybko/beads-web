@@ -8,12 +8,14 @@ import {
   Circle,
   Layers,
   Link2,
+  Plus,
   Square,
   X,
 } from "lucide-react";
 
 import { BeadPRSection } from "@/components/bead-pr-section";
 import { CopyableText } from "@/components/copyable-text";
+import { CreateBeadDialog } from "@/components/create-bead-dialog";
 import { DesignDocViewer } from "@/components/design-doc-viewer";
 import { EditableField } from "@/components/editable-field";
 import { SubtaskList } from "@/components/subtask-list";
@@ -74,42 +76,56 @@ export function BeadDetail({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, onOpenChange]);
 
-  const isReadOnly = !projectPath || isDoltProject(projectPath);
+  const isReadOnly = !projectPath;
+  const isDolt = projectPath ? isDoltProject(projectPath) : false;
 
   const handleSaveTitle = useCallback(async (newTitle: string) => {
     if (!projectPath) return;
     try {
-      await updateTitle(bead.id, newTitle, projectPath);
+      if (isDolt) {
+        await api.beads.update({ path: projectPath, id: bead.id, title: newTitle });
+      } else {
+        await updateTitle(bead.id, newTitle, projectPath);
+      }
       onUpdate?.();
     } catch (err) {
       toast({ variant: "destructive", title: "Failed to update title", description: err instanceof Error ? err.message : "Unknown error" });
       throw err;
     }
-  }, [bead.id, projectPath, onUpdate]);
+  }, [bead.id, projectPath, isDolt, onUpdate]);
 
   const handleSaveDescription = useCallback(async (newDesc: string) => {
     if (!projectPath) return;
     try {
-      await updateDescription(bead.id, newDesc, projectPath);
+      if (isDolt) {
+        await api.beads.update({ path: projectPath, id: bead.id, description: newDesc });
+      } else {
+        await updateDescription(bead.id, newDesc, projectPath);
+      }
       onUpdate?.();
     } catch (err) {
       toast({ variant: "destructive", title: "Failed to update description", description: err instanceof Error ? err.message : "Unknown error" });
       throw err;
     }
-  }, [bead.id, projectPath, onUpdate]);
+  }, [bead.id, projectPath, isDolt, onUpdate]);
 
   const handleStatusChange = useCallback(async (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (!projectPath) return;
     const newStatus = e.target.value as import("@/types").BeadStatus;
     try {
-      await cliUpdateStatus(bead.id, newStatus, projectPath);
+      if (isDolt) {
+        await api.beads.update({ path: projectPath, id: bead.id, status: newStatus });
+      } else {
+        await cliUpdateStatus(bead.id, newStatus, projectPath);
+      }
       onUpdate?.();
     } catch (err) {
       toast({ variant: "destructive", title: "Failed to update status", description: err instanceof Error ? err.message : "Unknown error" });
     }
-  }, [bead.id, projectPath, onUpdate]);
+  }, [bead.id, projectPath, isDolt, onUpdate]);
 
   const [isDesignDocFullScreen, setIsDesignDocFullScreen] = useState(false);
+  const [isAddSubtaskOpen, setIsAddSubtaskOpen] = useState(false);
   const hasDesignDoc = !!bead.design_doc;
   const hasWorktree = worktreeStatus?.exists ?? false;
   const isEpic = bead.children && bead.children.length > 0;
@@ -350,9 +366,22 @@ export function BeadDetail({
           {/* Subtasks (for epics) */}
           {isEpic && onChildClick && (
             <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-2 text-t-secondary">
-                Subtasks ({childTasks.length})
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-t-secondary">
+                  Subtasks ({childTasks.length})
+                </h3>
+                {projectPath && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsAddSubtaskOpen(true)}
+                    className="h-7 px-2 gap-1 text-xs text-success hover:text-success"
+                  >
+                    <Plus className="size-3.5" aria-hidden="true" />
+                    Add subtask
+                  </Button>
+                )}
+              </div>
               <div className="h-px bg-b-default mb-3" />
               <div className="rounded-lg border border-b-default bg-surface-raised/50 p-3">
                 <SubtaskList
@@ -390,6 +419,17 @@ export function BeadDetail({
           <span className="sr-only">Close</span>
         </button>
       </div>
+
+      {/* Add Subtask Dialog (for epics) */}
+      {projectPath && isEpic && (
+        <CreateBeadDialog
+          open={isAddSubtaskOpen}
+          onOpenChange={setIsAddSubtaskOpen}
+          projectPath={projectPath}
+          onCreated={() => onUpdate?.()}
+          parentId={bead.id}
+        />
+      )}
     </>
   );
 }

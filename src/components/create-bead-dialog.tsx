@@ -42,6 +42,8 @@ interface CreateBeadDialogProps {
   onOpenChange: (open: boolean) => void;
   projectPath: string;
   onCreated: () => void;
+  /** Parent bead ID — when set, creates a subtask */
+  parentId?: string;
 }
 
 export function CreateBeadDialog({
@@ -49,6 +51,7 @@ export function CreateBeadDialog({
   onOpenChange,
   projectPath,
   onCreated,
+  parentId,
 }: CreateBeadDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -87,8 +90,9 @@ export function CreateBeadDialog({
         path: projectPath,
         title: trimmed,
         description: description.trim() || undefined,
-        issue_type: issueType,
+        issue_type: parentId ? "task" : issueType,
         priority: parseInt(priority, 10),
+        parent_id: parentId,
       });
 
       handleOpenChange(false);
@@ -102,9 +106,9 @@ export function CreateBeadDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md bg-surface-raised border-b-default">
+      <DialogContent className="sm:max-w-2xl w-[90vw] bg-surface-raised border-b-default">
         <DialogHeader>
-          <DialogTitle className="text-t-primary">New Bead</DialogTitle>
+          <DialogTitle className="text-t-primary">{parentId ? "New Subtask" : "New Bead"}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
@@ -139,28 +143,30 @@ export function CreateBeadDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional details…"
-              rows={3}
-              className="flex w-full rounded-md border border-b-strong bg-surface-overlay/50 px-3 py-2 text-sm text-t-primary placeholder:text-t-muted ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+              rows={8}
+              className="flex w-full rounded-md border border-b-strong bg-surface-overlay/50 px-3 py-2 text-sm text-t-primary placeholder:text-t-muted ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y"
             />
           </div>
 
           {/* Type and Priority row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium text-t-secondary">Type</label>
-              <Select value={issueType} onValueChange={setIssueType}>
-                <SelectTrigger className="bg-surface-overlay/50 border-b-strong text-t-primary">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-surface-raised border-b-default">
-                  {ISSUE_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value} className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary">
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className={parentId ? "" : "grid grid-cols-2 gap-3"}>
+            {!parentId && (
+              <div className="grid gap-1.5">
+                <label className="text-sm font-medium text-t-secondary">Type</label>
+                <Select value={issueType} onValueChange={setIssueType}>
+                  <SelectTrigger className="bg-surface-overlay/50 border-b-strong text-t-primary">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-surface-raised border-b-default">
+                    {ISSUE_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value} className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary">
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="grid gap-1.5">
               <label className="text-sm font-medium text-t-secondary">Priority</label>

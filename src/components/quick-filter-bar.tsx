@@ -177,7 +177,7 @@ export function QuickFilterBar({
         <Button
           size="sm"
           onClick={onNewBead}
-          className="h-8 px-3 gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90 font-medium shadow-sm"
+          className="h-8 px-3 gap-1.5 bg-success text-white hover:bg-success/85 font-medium shadow-sm"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           New

@@ -136,6 +136,7 @@ export interface CreateBeadInput {
   description?: string;
   issue_type?: string;
   priority?: number;
+  parent_id?: string;
 }
 
 export const beads = {
@@ -151,6 +152,12 @@ export const beads = {
     method: 'POST',
     body: JSON.stringify(data),
   }),
+
+  update: (data: { path: string; id: string; title?: string; description?: string; status?: string }) =>
+    fetchApi<{ success: boolean }>('/api/beads/update', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
 };
 
 /**

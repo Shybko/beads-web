@@ -241,6 +241,7 @@ impl DoltManager {
         description: Option<&str>,
         issue_type: &str,
         priority: i32,
+        parent_id: Option<&str>,
     ) -> Result<(), DoltError> {
         let mut conn = self.pool.get_conn().await
             .map_err(|e| DoltError::ConnectionFailed(e.to_string()))?;
@@ -263,6 +264,18 @@ impl DoltManager {
                 "now" => &now,
             },
         ).await.map_err(|e| DoltError::QueryFailed(format!("insert: {}", e)))?;
+
+        // Insert parent-child dependency if parent specified
+        if let Some(parent) = parent_id {
+            let dep_query = format!(
+                "INSERT INTO `{}`.dependencies (issue_id, depends_on_id, `type`) VALUES (:child, :parent, 'parent-child')",
+                db_name
+            );
+            conn.exec_drop(
+                &dep_query,
+                mysql_async::params! { "child" => id, "parent" => parent },
+            ).await.map_err(|e| DoltError::QueryFailed(format!("dependency: {}", e)))?;
+        }
 
         // Dolt commit
         let commit_query = format!(

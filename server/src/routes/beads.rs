@@ -388,6 +388,8 @@ pub struct CreateBeadRequest {
     pub issue_type: Option<String>,
     /// Priority 0-4 (default: 2)
     pub priority: Option<i32>,
+    /// Parent bead ID (for subtasks)
+    pub parent_id: Option<String>,
 }
 
 /// POST /api/beads/create
@@ -430,6 +432,7 @@ pub async fn create_bead_handler(
             req.description.as_deref(),
             issue_type,
             priority,
+            req.parent_id.as_deref(),
         ).await {
             Ok(()) => {
                 return (
@@ -463,6 +466,9 @@ pub async fn create_bead_handler(
     }
     args.push(format!("--type={}", issue_type));
     args.push(format!("--priority={}", priority));
+    if let Some(ref parent) = req.parent_id {
+        args.push(format!("--parent={}", parent));
+    }
 
     let result = tokio::time::timeout(
         Duration::from_secs(30),
@@ -489,6 +495,115 @@ pub async fn create_bead_handler(
                     })
                     .unwrap_or_else(|| stdout.trim().to_string());
                 (StatusCode::CREATED, Json(serde_json::json!({ "id": id, "stdout": stdout.trim() })))
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": stderr.trim() })))
+            }
+        }
+        Ok(Err(e)) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("Failed to execute bd: {}", e) })),
+        ),
+        Err(_) => (
+            StatusCode::GATEWAY_TIMEOUT,
+            Json(serde_json::json!({ "error": "bd command timed out" })),
+        ),
+    }
+}
+
+/// Request body for updating a bead.
+#[derive(Debug, Deserialize)]
+pub struct UpdateBeadRequest {
+    /// Project path or `dolt://dbname`
+    pub path: String,
+    /// Bead ID to update
+    pub id: String,
+    /// New title (optional)
+    pub title: Option<String>,
+    /// New description (optional)
+    pub description: Option<String>,
+    /// New status (optional)
+    pub status: Option<String>,
+}
+
+/// PATCH /api/beads/update
+///
+/// Updates a bead's fields. For `dolt://` paths, updates via Dolt SQL.
+/// For filesystem paths, delegates to `bd update` CLI.
+pub async fn update_bead_handler(
+    Extension(dolt_manager): Extension<Arc<DoltManager>>,
+    Json(req): Json<UpdateBeadRequest>,
+) -> impl IntoResponse {
+    if req.id.trim().is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "Bead ID is required" })),
+        );
+    }
+
+    let has_changes = req.title.is_some() || req.description.is_some() || req.status.is_some();
+    if !has_changes {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "No fields to update" })),
+        );
+    }
+
+    // Dolt-only path: update via SQL
+    if let Some(db_name) = req.path.strip_prefix(DOLT_PATH_PREFIX) {
+        if !dolt_manager.is_available() && !dolt_manager.check_server().await {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({ "error": "Dolt server is not running" })),
+            );
+        }
+
+        match dolt_manager.update_bead(
+            db_name,
+            &req.id,
+            req.title.as_deref(),
+            req.description.as_deref(),
+            req.status.as_deref(),
+        ).await {
+            Ok(()) => {
+                return (StatusCode::OK, Json(serde_json::json!({ "success": true })));
+            }
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": e.to_string() })),
+                );
+            }
+        }
+    }
+
+    // Filesystem path: delegate to bd CLI
+    let project_path = std::path::PathBuf::from(&req.path);
+    if let Err(e) = validate_path_security(&project_path) {
+        return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": e })));
+    }
+
+    // Build bd update args
+    let mut args = vec!["update".to_string(), req.id.clone()];
+    if let Some(ref t) = req.title {
+        args.push(format!("--title={}", t));
+    }
+    if let Some(ref d) = req.description {
+        args.push(format!("-d={}", d));
+    }
+    if let Some(ref s) = req.status {
+        args.push(format!("--status={}", s));
+    }
+
+    let result = tokio::time::timeout(
+        Duration::from_secs(30),
+        Command::new("bd").args(&args).current_dir(&project_path).output(),
+    ).await;
+
+    match result {
+        Ok(Ok(output)) => {
+            if output.status.success() {
+                (StatusCode::OK, Json(serde_json::json!({ "success": true })))
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": stderr.trim() })))
