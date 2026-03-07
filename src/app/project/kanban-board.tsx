@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { ArrowLeft } from "lucide-react";
@@ -252,7 +251,7 @@ export default function KanbanBoard() {
       <div className="dark flex flex-col items-center justify-center min-h-dvh bg-[#0a0a0a] gap-4">
         <div role="alert" className="text-red-400">Error: {projectError.message}</div>
         <Button variant="outline" asChild>
-          <Link href="/">Back to projects</Link>
+          <a href="/">Back to projects</a>
         </Button>
       </div>
     );
@@ -264,7 +263,7 @@ export default function KanbanBoard() {
       <div className="dark flex flex-col items-center justify-center min-h-dvh bg-[#0a0a0a] gap-4">
         <div className="text-zinc-500">Project not found</div>
         <Button variant="outline" asChild>
-          <Link href="/">Back to projects</Link>
+          <a href="/">Back to projects</a>
         </Button>
       </div>
     );
@@ -275,10 +274,10 @@ export default function KanbanBoard() {
       {/* Breadcrumb line */}
       <div className="flex items-center gap-2 px-4 py-2">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/">
+          <a href="/">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Back to projects</span>
-          </Link>
+          </a>
         </Button>
         <EditableProjectName
           projectId={project.id}

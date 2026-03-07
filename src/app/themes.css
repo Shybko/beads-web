@@ -17,7 +17,7 @@
  * THEME 1: Glassmorphism
  * Frosted glass panels, blue/purple gradient feel
  * ────────────────────────────────────────────── */
-[data-theme="glassmorphism"] {
+html[data-theme="glassmorphism"] {
   /* Surface */
   --surface-base: 240 33% 7%;
   --surface-raised: 240 20% 12%;
@@ -64,7 +64,7 @@
  * THEME 2: Neo-Brutalist
  * Thick borders, sharp corners, neon accents
  * ────────────────────────────────────────────── */
-[data-theme="neo-brutalist"] {
+html[data-theme="neo-brutalist"] {
   /* Surface */
   --surface-base: 0 0% 7%;
   --surface-raised: 0 0% 10%;
@@ -111,7 +111,7 @@
  * THEME 3: Linear Minimal
  * Ultra-minimal, monochrome with subtle accents
  * ────────────────────────────────────────────── */
-[data-theme="linear-minimal"] {
+html[data-theme="linear-minimal"] {
   /* Surface */
   --surface-base: 240 8% 4%;
   --surface-raised: 240 6% 7%;
@@ -158,7 +158,7 @@
  * THEME 4: Soft Light
  * Light background, soft shadows, pastel accents
  * ────────────────────────────────────────────── */
-[data-theme="soft-light"] {
+html[data-theme="soft-light"] {
   /* shadcn overrides for light mode */
   --background: 220 30% 97%;
   --foreground: 240 27% 14%;
@@ -233,7 +233,7 @@
  * THEME 5: Notion Warm
  * Warm neutrals, Notion-style property tags
  * ────────────────────────────────────────────── */
-[data-theme="notion-warm"] {
+html[data-theme="notion-warm"] {
   /* shadcn overrides for light mode */
   --background: 40 23% 97%;
   --foreground: 40 10% 20%;
@@ -308,7 +308,7 @@
  * THEME 6: GitHub Clean
  * GitHub Projects-inspired, clean and functional
  * ────────────────────────────────────────────── */
-[data-theme="github-clean"] {
+html[data-theme="github-clean"] {
   /* shadcn overrides for light mode */
   --background: 210 25% 97%;
   --foreground: 213 13% 14%;

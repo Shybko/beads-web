@@ -23,14 +23,14 @@ export const BeadSchema = z.object({
   owner: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
-  comments: z.array(CommentSchema),
-  parent_id: z.optional(z.string()),
-  children: z.optional(z.array(z.string())),
-  design_doc: z.optional(z.string()),
-  deps: z.optional(z.array(z.string())),
-  blockers: z.optional(z.array(z.string())),
-  relates_to: z.optional(z.array(z.string())),
-  _originalStatus: z.optional(z.string()),
+  comments: z.array(CommentSchema).nullish(),
+  parent_id: z.string().nullish(),
+  children: z.array(z.string()).nullish(),
+  design_doc: z.string().nullish(),
+  deps: z.array(z.string()).nullish(),
+  blockers: z.array(z.string()).nullish(),
+  relates_to: z.array(z.string()).nullish(),
+  _originalStatus: z.string().nullish(),
 });
 
 export const BeadsResponseSchema = z.object({

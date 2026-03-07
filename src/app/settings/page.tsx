@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-import Link from "next/link";
-
 import { ColorPicker } from "@/components/color-picker";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
@@ -74,7 +72,7 @@ export default function SettingsPage() {
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-b-default bg-surface-base/80 backdrop-blur-sm px-6 py-4">
         <div className="flex items-center gap-4">
-          <Link
+          <a
             href="/"
             aria-label="Go back to home"
             className="rounded-md p-2 text-t-tertiary hover:bg-surface-overlay/50 hover:text-t-primary"
@@ -94,7 +92,7 @@ export default function SettingsPage() {
               <path d="m12 19-7-7 7-7" />
               <path d="M19 12H5" />
             </svg>
-          </Link>
+          </a>
           <h1 className="text-xl font-semibold text-t-primary">Settings</h1>
         </div>
       </header>
