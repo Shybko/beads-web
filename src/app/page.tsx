@@ -19,7 +19,7 @@ export default function ProjectsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-  const { projects, isLoading, error, addProject, updateProjectTags } = useProjects();
+  const { projects, isLoading, loadingStatus, error, addProject, updateProjectTags } = useProjects();
   const { toast } = useToast();
 
   // Get all unique tags across projects
@@ -186,6 +186,14 @@ export default function ProjectsPage() {
                   Showing {filteredProjects.length} of {projects.length} project{projects.length !== 1 ? "s" : ""}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Loading status line */}
+          {loadingStatus && (
+            <div className="mb-4 flex items-center gap-2 text-xs text-t-muted animate-pulse">
+              <div className="h-1.5 w-1.5 rounded-full bg-info animate-ping" />
+              {loadingStatus}
             </div>
           )}
 
