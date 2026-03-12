@@ -73,8 +73,8 @@ export function ProjectSettingsDialog({
     e.preventDefault();
 
     const trimmedName = name.trim();
-    const trimmedPath = path.trim();
-    const trimmedLocalPath = localPath.trim();
+    const trimmedPath = path.trim().replace(/\\/g, '/');
+    const trimmedLocalPath = localPath.trim().replace(/\\/g, '/');
 
     if (!trimmedName) {
       toast({
@@ -87,7 +87,7 @@ export function ProjectSettingsDialog({
 
     // Nothing changed
     const nameChanged = trimmedName !== projectName;
-    const pathChanged = !isDolt && trimmedPath !== projectPath;
+    const pathChanged = trimmedPath !== projectPath;
     const localPathChanged = trimmedLocalPath !== (projectLocalPath || "");
 
     if (!nameChanged && !pathChanged && !localPathChanged) {
@@ -219,12 +219,37 @@ export function ProjectSettingsDialog({
               />
             </div>
 
-            {/* Dolt source (read-only) */}
+            {/* Dolt source (editable) */}
             {isDolt && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-t-secondary">Dolt Source</label>
-                <p className="truncate rounded-md bg-surface-overlay px-3 py-2 text-sm text-t-tertiary">
-                  {projectPath}
+                <label htmlFor="settings-dolt-source" className="text-sm font-medium text-t-secondary">
+                  Dolt Source
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    id="settings-dolt-source"
+                    value={path}
+                    onChange={(e) => setPath(e.target.value)}
+                    placeholder="dolt://host:port/database"
+                  />
+                  {localPath && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="md"
+                      onClick={() => {
+                        setPath(localPath);
+                        setLocalPath("");
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-t-muted">
+                  {localPath
+                    ? "Click Clear to switch from central Dolt server to per-project mode. The project will read beads from its local .beads/ folder instead."
+                    : "Set a Local Folder below first, then Clear will switch the project to per-project Dolt mode."}
                 </p>
               </div>
             )}

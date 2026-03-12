@@ -19,7 +19,7 @@ export default function ProjectsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-  const { projects, isLoading, loadingStatus, error, addProject, updateProjectTags } = useProjects();
+  const { projects, isLoading, loadingStatus, error, addProject, updateProjectTags, refetch } = useProjects();
   const { toast } = useToast();
 
   // Get all unique tags across projects
@@ -248,6 +248,7 @@ export default function ProjectsPage() {
                   beadCounts={project.beadCounts}
                   dataSource={project.dataSource}
                   onTagsChange={(tags) => updateProjectTags(project.id, tags)}
+                  onUpdated={refetch}
                 />
               ))}
             </div>

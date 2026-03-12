@@ -4,7 +4,9 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { Code, FolderOpen, Loader2 } from "lucide-react";
+import { Code, FolderOpen, Loader2, Settings } from "lucide-react";
+
+import { ProjectSettingsDialog } from "@/components/project-settings-dialog";
 
 import { StatusDonut } from "@/components/status-donut";
 import { TagPicker } from "@/components/tag-picker";
@@ -53,6 +55,7 @@ interface ProjectCardProps {
   beadCounts?: BeadCounts;
   dataSource?: string;
   onTagsChange?: (tags: Tag[]) => void;
+  onUpdated?: () => void;
 }
 
 export function ProjectCard({
@@ -64,9 +67,11 @@ export function ProjectCard({
   beadCounts = { open: 0, in_progress: 0, inreview: 0, closed: 0 },
   dataSource,
   onTagsChange,
+  onUpdated,
 }: ProjectCardProps) {
   const router = useRouter();
   const [isOpening, setIsOpening] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { toast } = useToast();
 
   // For dolt projects, use localPath for filesystem operations; for regular projects use path
@@ -103,6 +108,7 @@ export function ProjectCard({
   };
 
   return (
+    <>
     <RoiuiCard
       className="cursor-pointer flex flex-col min-h-[155px]"
       onClick={handleCardClick}
@@ -171,7 +177,30 @@ export function ProjectCard({
             </span>
           )}
         </div>
-        {fsPath && (
+        <div className="flex items-center gap-1 shrink-0">
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  mode="icon"
+                  className="shrink-0"
+                  aria-label="Project settings"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSettingsOpen(true);
+                  }}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Project settings</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          {fsPath && (
           <TooltipProvider delayDuration={300}>
             <Tooltip>
               <DropdownMenu>
@@ -231,7 +260,19 @@ export function ProjectCard({
             </Tooltip>
           </TooltipProvider>
         )}
+        </div>
       </div>
+
     </RoiuiCard>
+    <ProjectSettingsDialog
+      open={settingsOpen}
+      onOpenChange={setSettingsOpen}
+      projectId={id}
+      projectName={name}
+      projectPath={path}
+      projectLocalPath={localPath}
+      onUpdated={onUpdated ?? (() => {})}
+    />
+    </>
   );
 }
