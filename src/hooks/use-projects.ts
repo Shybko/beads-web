@@ -26,21 +26,37 @@ export function useProjects(): UseProjectsResult {
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const loadingRef = useRef(0);
+  const beadsAbortRef = useRef<AbortController | null>(null);
 
   const fetchProjects = useCallback(async () => {
     const loadId = ++loadingRef.current;
+
+    // Abort any previous beads loading cycle FIRST to free browser connections
+    if (beadsAbortRef.current) {
+      beadsAbortRef.current.abort();
+      beadsAbortRef.current = null;
+    }
+
     try {
-      setIsLoading(true);
       setError(null);
-      setLoadingStatus("Loading projects...");
 
       const data = await getProjectsWithTags();
       if (loadId !== loadingRef.current) return;
 
-      // Show projects immediately with empty counts
+      // Show projects immediately, preserving existing bead counts from previous load
       const zeroCounts: BeadCounts = { open: 0, in_progress: 0, inreview: 0, closed: 0 };
-      setProjects(data.map((p) => ({ ...p, beadCounts: zeroCounts })));
+      setProjects((prev) => {
+        const prevMap = new Map(prev.map((p) => [p.id, p]));
+        return data.map((p) => ({
+          ...p,
+          beadCounts: prevMap.get(p.id)?.beadCounts ?? zeroCounts,
+          dataSource: prevMap.get(p.id)?.dataSource,
+        }));
+      });
       setIsLoading(false);
+
+      beadsAbortRef.current = new AbortController();
+      const beadsSignal = beadsAbortRef.current.signal;
 
       // Then load beads per-project, updating each as it completes
       let loaded = 0;
@@ -48,7 +64,9 @@ export function useProjects(): UseProjectsResult {
 
       const loadBeads = async (project: Project) => {
         try {
+          if (beadsSignal.aborted) return null;
           const result = await loadProjectBeads(project.path, { withSource: true });
+          if (beadsSignal.aborted) return null;
           const grouped = groupBeadsByStatus(result.beads);
           const beadCounts: BeadCounts = {
             open: grouped.open.length,
@@ -57,7 +75,8 @@ export function useProjects(): UseProjectsResult {
             closed: grouped.closed.length,
           };
           return { id: project.id, beadCounts, dataSource: result.source };
-        } catch {
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') return null;
           return { id: project.id, beadCounts: zeroCounts, dataSource: undefined };
         }
       };
@@ -65,7 +84,7 @@ export function useProjects(): UseProjectsResult {
       // Fire all requests in parallel, update state as each resolves
       const promises = data.map(async (project) => {
         const result = await loadBeads(project);
-        if (loadId !== loadingRef.current) return;
+        if (!result || loadId !== loadingRef.current) return;
 
         loaded++;
         setLoadingStatus(
@@ -115,6 +134,9 @@ export function useProjects(): UseProjectsResult {
   // Fetch projects on mount
   useEffect(() => {
     fetchProjects();
+    return () => {
+      beadsAbortRef.current?.abort();
+    };
   }, [fetchProjects]);
 
   return {
