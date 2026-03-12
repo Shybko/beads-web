@@ -224,11 +224,6 @@ impl Database {
 
     // ===== Project CRUD =====
 
-    /// Gets all active (non-archived) projects with their tags, ordered by last opened
-    pub fn get_projects_with_tags(&self) -> Result<Vec<ProjectWithTags>, DbError> {
-        self.get_projects_with_tags_filtered(false)
-    }
-
     /// Gets projects with their tags, optionally including archived
     pub fn get_projects_with_tags_filtered(&self, include_archived: bool) -> Result<Vec<ProjectWithTags>, DbError> {
         let projects = self.get_projects_filtered(include_archived)?;
@@ -249,11 +244,6 @@ impl Database {
         }
 
         Ok(result)
-    }
-
-    /// Gets all active (non-archived) projects, ordered by last opened
-    pub fn get_projects(&self) -> Result<Vec<Project>, DbError> {
-        self.get_projects_filtered(false)
     }
 
     /// Gets projects, optionally including archived
