@@ -263,7 +263,7 @@ pub async fn list_agents(Query(params): Query<AgentParams>) -> impl IntoResponse
         match parse_agent_file(&path) {
             Ok(agent) => agents.push(agent),
             Err(e) => {
-                tracing::warn!("Skipping agent file {:?}: {}", path, e);
+                tracing::debug!("Skipping agent file {:?}: {}", path, e);
             }
         }
     }
