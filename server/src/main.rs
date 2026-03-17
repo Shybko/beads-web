@@ -190,6 +190,7 @@ async fn main() {
         .route("/api/memory/stats", get(routes::memory::memory_stats))
         .route("/api/watch/beads", get(routes::watch_beads))
         .route("/api/version/check", get(routes::version::version_check))
+        .route("/api/update", post(routes::version::perform_update))
         .fallback(serve_static)
         .layer(Extension(version_cache))
         .layer(Extension(database))

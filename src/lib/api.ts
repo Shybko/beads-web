@@ -442,6 +442,16 @@ export interface VersionCheckResponse {
   update_available: boolean;
   download_url: string | null;
   release_notes: string | null;
+  asset_url: string | null;
+}
+
+/**
+ * Update response
+ */
+export interface UpdateResponse {
+  status?: string;
+  message?: string;
+  error?: string;
 }
 
 /**
@@ -449,6 +459,16 @@ export interface VersionCheckResponse {
  */
 export const version = {
   check: () => fetchApi<VersionCheckResponse>('/api/version/check'),
+};
+
+/**
+ * Update API
+ */
+export const update = {
+  perform: () => fetchApi<UpdateResponse>('/api/update', {
+    method: 'POST',
+    signal: AbortSignal.timeout(600000), // 10 min timeout for large downloads
+  }),
 };
 
 /**
