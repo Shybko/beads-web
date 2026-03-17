@@ -399,6 +399,258 @@ test_10_missing_beads_dir() {
     assert_status "$name" "$status" "404"
 }
 
+# Test 11: Add comment to a bead
+test_11_add_comment() {
+    local name="POST /api/bd/command — add comment"
+    local bead_id
+    bead_id=$(get_created_bead_id)
+    if [[ -z "$bead_id" ]]; then
+        fail "$name" "no bead ID"
+        return
+    fi
+    local status
+    status=$(curl -s -o /tmp/t11.json -w "%{http_code}" \
+        -X POST "${BASE_URL}/api/bd/command" \
+        -H "Content-Type: application/json" \
+        -d "{\"cwd\":\"${PROJECT_DIR}\",\"args\":[\"comments\",\"add\",\"${bead_id}\",\"Test comment from integration\"]}")
+    if [[ "$status" == "200" || "$status" == "201" ]]; then
+        pass "$name"
+    else
+        local body=$(cat /tmp/t11.json 2>/dev/null || echo "no body")
+        fail "$name" "expected HTTP 200/201, got $status — $body"
+    fi
+}
+
+# Test 12: Comment appears in bead data
+test_12_comment_visible() {
+    local name="Comment visible in bead data"
+    sleep 1
+    local bead_id
+    bead_id=$(get_created_bead_id)
+    local status
+    status=$(curl -s -o /tmp/t12.json -w "%{http_code}" "${BASE_URL}/api/beads?path=${PROJECT_DIR}")
+    if [[ "$status" != "200" ]]; then
+        fail "$name" "expected HTTP 200, got $status"
+        return
+    fi
+    local result
+    result=$(python3 -c "
+import json, sys
+bead_id = '${bead_id}'
+with open('/tmp/t12.json') as f:
+    data = json.load(f)
+beads = data.get('beads', [])
+bead = next((b for b in beads if b.get('id') == bead_id), None)
+if not bead:
+    print(f'bead {bead_id} not found', file=sys.stderr)
+    sys.exit(1)
+comments = bead.get('comments') or []
+if not any('Test comment from integration' in c.get('text','') for c in comments):
+    print(f'comment not found in bead, comments: {comments}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1)
+    if [[ $? -eq 0 ]]; then
+        pass "$name"
+    else
+        fail "$name" "$result"
+    fi
+}
+
+# Test 13: Update title
+test_13_update_title() {
+    local name="PATCH /api/beads/update title"
+    local bead_id
+    bead_id=$(get_created_bead_id)
+    if [[ -z "$bead_id" ]]; then
+        fail "$name" "no bead ID"
+        return
+    fi
+    local status
+    status=$(curl -s -o /tmp/t13.json -w "%{http_code}" \
+        -X PATCH "${BASE_URL}/api/beads/update" \
+        -H "Content-Type: application/json" \
+        -d "{\"path\":\"${PROJECT_DIR}\",\"id\":\"${bead_id}\",\"title\":\"Updated title via API\"}")
+    if [[ "$status" != "200" ]]; then
+        local body=$(cat /tmp/t13.json 2>/dev/null || echo "no body")
+        fail "$name" "expected HTTP 200, got $status — $body"
+        return
+    fi
+    # Verify title changed
+    sleep 1
+    curl -s -o /tmp/t13b.json "${BASE_URL}/api/beads?path=${PROJECT_DIR}"
+    local result
+    result=$(python3 -c "
+import json, sys
+bead_id = '${bead_id}'
+with open('/tmp/t13b.json') as f:
+    data = json.load(f)
+bead = next((b for b in data.get('beads',[]) if b.get('id') == bead_id), None)
+if not bead:
+    print('bead not found', file=sys.stderr)
+    sys.exit(1)
+if bead.get('title') != 'Updated title via API':
+    print(f'title not updated: {bead.get(\"title\")}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1)
+    if [[ $? -eq 0 ]]; then
+        pass "$name"
+    else
+        fail "$name" "$result"
+    fi
+}
+
+# Test 14: Close a bead
+test_14_close_bead() {
+    local name="Close bead via bd command"
+    if [[ -z "$BEAD_ID2" ]]; then
+        fail "$name" "no BEAD_ID2"
+        return
+    fi
+    local status
+    status=$(curl -s -o /tmp/t14.json -w "%{http_code}" \
+        -X POST "${BASE_URL}/api/bd/command" \
+        -H "Content-Type: application/json" \
+        -d "{\"cwd\":\"${PROJECT_DIR}\",\"args\":[\"close\",\"${BEAD_ID2}\"]}")
+    if [[ "$status" == "200" || "$status" == "201" ]]; then
+        pass "$name"
+    else
+        local body=$(cat /tmp/t14.json 2>/dev/null || echo "no body")
+        fail "$name" "expected HTTP 200/201, got $status — $body"
+    fi
+}
+
+# Test 15: GET /api/projects returns list
+test_15_list_projects() {
+    local name="GET /api/projects returns project list"
+    local status
+    status=$(curl -s -o /tmp/t15.json -w "%{http_code}" "${BASE_URL}/api/projects")
+    assert_status "$name" "$status" "200"
+}
+
+# Test 16: POST /api/projects — add project
+test_16_add_project() {
+    local name="POST /api/projects adds project"
+    local status
+    status=$(curl -s -o /tmp/t16.json -w "%{http_code}" \
+        -X POST "${BASE_URL}/api/projects" \
+        -H "Content-Type: application/json" \
+        -d "{\"name\":\"Integration Test Project\",\"path\":\"${PROJECT_DIR}\"}")
+    if [[ "$status" == "200" || "$status" == "201" ]]; then
+        pass "$name"
+    else
+        local body=$(cat /tmp/t16.json 2>/dev/null || echo "no body")
+        fail "$name" "expected HTTP 200/201, got $status — $body"
+    fi
+}
+
+# Test 17: Archive project
+test_17_archive_project() {
+    local name="PATCH archive project"
+    # Get project ID from the add response
+    local project_id
+    project_id=$(python3 -c "import json; print(json.load(open('/tmp/t16.json')).get('id',''))" 2>/dev/null || echo "")
+    if [[ -z "$project_id" ]]; then
+        fail "$name" "no project ID from test 16"
+        return
+    fi
+    local status
+    status=$(curl -s -o /tmp/t17.json -w "%{http_code}" \
+        -X PATCH "${BASE_URL}/api/projects/${project_id}/archive")
+    if [[ "$status" == "200" || "$status" == "204" ]]; then
+        pass "$name"
+    else
+        fail "$name" "expected HTTP 200 or 204, got $status"
+    fi
+}
+
+# Test 18: Archived project hidden from default list
+test_18_archived_hidden() {
+    local name="Archived project hidden from default list"
+    local status
+    status=$(curl -s -o /tmp/t18.json -w "%{http_code}" "${BASE_URL}/api/projects")
+    if [[ "$status" != "200" ]]; then
+        fail "$name" "expected HTTP 200, got $status"
+        return
+    fi
+    local result
+    result=$(python3 -c "
+import json, sys
+with open('/tmp/t18.json') as f:
+    projects = json.load(f)
+names = [p.get('name','') for p in projects]
+if 'Integration Test Project' in names:
+    print('archived project still visible', file=sys.stderr)
+    sys.exit(1)
+" 2>&1)
+    if [[ $? -eq 0 ]]; then
+        pass "$name"
+    else
+        fail "$name" "$result"
+    fi
+}
+
+# Test 19: Unarchive project
+test_19_unarchive_project() {
+    local name="PATCH unarchive project"
+    local project_id
+    project_id=$(python3 -c "import json; print(json.load(open('/tmp/t16.json')).get('id',''))" 2>/dev/null || echo "")
+    if [[ -z "$project_id" ]]; then
+        fail "$name" "no project ID"
+        return
+    fi
+    local status
+    status=$(curl -s -o /tmp/t19.json -w "%{http_code}" \
+        -X PATCH "${BASE_URL}/api/projects/${project_id}/unarchive")
+    if [[ "$status" == "200" || "$status" == "204" ]]; then
+        pass "$name"
+    else
+        fail "$name" "expected HTTP 200 or 204, got $status"
+    fi
+}
+
+# Test 20: Epic with children
+test_20_epic_with_children() {
+    local name="Epic with child tasks"
+    # Create epic
+    local epic_status
+    epic_status=$(curl -s -o /tmp/t20_epic.json -w "%{http_code}" \
+        -X POST "${BASE_URL}/api/beads/create" \
+        -H "Content-Type: application/json" \
+        -d "{\"path\":\"${PROJECT_DIR}\",\"title\":\"Test Epic Parent\",\"issue_type\":\"epic\"}")
+    if [[ "$epic_status" != "201" ]]; then
+        fail "$name" "epic create failed with $epic_status"
+        return
+    fi
+    # Get epic ID
+    local epic_id
+    epic_id=$(python3 -c "
+import json, re
+raw = json.load(open('/tmp/t20_epic.json')).get('id','')
+m = re.search(r'Created issue:\s*(\S+)', raw)
+if m:
+    print(re.sub(r'[\s—:]+$', '', m.group(1)))
+elif raw.strip():
+    print(raw.strip().split()[-1])
+else:
+    print('')
+" 2>/dev/null || echo "")
+    if [[ -z "$epic_id" ]]; then
+        fail "$name" "no epic ID"
+        return
+    fi
+    # Create child
+    local child_status
+    child_status=$(curl -s -o /tmp/t20_child.json -w "%{http_code}" \
+        -X POST "${BASE_URL}/api/beads/create" \
+        -H "Content-Type: application/json" \
+        -d "{\"path\":\"${PROJECT_DIR}\",\"title\":\"Child of epic\",\"parent_id\":\"${epic_id}\"}")
+    if [[ "$child_status" != "201" ]]; then
+        fail "$name" "child create failed with $child_status"
+        return
+    fi
+    pass "$name"
+}
+
 # ── Run all tests ─────────────────────────────────────────────────────────────
 
 test_1_get_beads
@@ -411,6 +663,16 @@ test_7_update_status
 test_8_status_reflected
 test_9_nonexistent_path
 test_10_missing_beads_dir
+test_11_add_comment
+test_12_comment_visible
+test_13_update_title
+test_14_close_bead
+test_15_list_projects
+test_16_add_project
+test_17_archive_project
+test_18_archived_hidden
+test_19_unarchive_project
+test_20_epic_with_children
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 
