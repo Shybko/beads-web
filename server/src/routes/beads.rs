@@ -238,6 +238,19 @@ async fn run_bd(args: &[&str], cwd: &Path) -> Result<String, String> {
     }
 }
 
+/// Extracts JSON array from CLI output that may contain non-JSON prefix lines.
+/// bd v0.61+ outputs warnings and migration messages to stdout before the JSON.
+fn extract_json_array(output: &str) -> Result<&str, String> {
+    if let Some(start) = output.find('[') {
+        Ok(&output[start..])
+    } else {
+        Err(format!(
+            "No JSON array found in output: {}",
+            &output[..output.len().min(200)]
+        ))
+    }
+}
+
 /// Reads beads from the Dolt database via `bd` CLI.
 ///
 /// Calls `bd list --json` for issues and `bd sql` for comments,
@@ -245,7 +258,8 @@ async fn run_bd(args: &[&str], cwd: &Path) -> Result<String, String> {
 async fn read_beads_from_cli(project_path: &Path) -> Result<Vec<Bead>, String> {
     // Get all beads
     let list_output = run_bd(&["list", "--json"], project_path).await?;
-    let mut beads: Vec<Bead> = serde_json::from_str(&list_output)
+    let json_str = extract_json_array(&list_output)?;
+    let mut beads: Vec<Bead> = serde_json::from_str(json_str)
         .map_err(|e| format!("Failed to parse bd list output: {}", e))?;
 
     // Get all comments
@@ -256,7 +270,8 @@ async fn read_beads_from_cli(project_path: &Path) -> Result<Vec<Bead>, String> {
     .await;
 
     if let Ok(output) = comments_output {
-        if let Ok(comments) = serde_json::from_str::<Vec<Comment>>(&output) {
+        let json_str = extract_json_array(&output).unwrap_or("[]");
+        if let Ok(comments) = serde_json::from_str::<Vec<Comment>>(json_str) {
             // Group comments by issue_id
             let mut comments_map: HashMap<String, Vec<Comment>> = HashMap::new();
             for comment in comments {
@@ -1588,5 +1603,24 @@ mod tests {
         let path = "dolt://beads_mydb";
         let db_name = path.strip_prefix(DOLT_PATH_PREFIX);
         assert_eq!(db_name, Some("beads_mydb"));
+    }
+
+    #[test]
+    fn test_extract_json_array_clean() {
+        let output = r#"[{"id":"test-1","title":"T","status":"open"}]"#;
+        assert_eq!(extract_json_array(output).unwrap(), output);
+    }
+
+    #[test]
+    fn test_extract_json_array_with_prefix() {
+        let output = "Warning: something\n2026/03/17 migration...\nFlushed working set\n[{\"id\":\"test-1\"}]";
+        let result = extract_json_array(output).unwrap();
+        assert!(result.starts_with('['));
+    }
+
+    #[test]
+    fn test_extract_json_array_no_json() {
+        let output = "Error: something went wrong";
+        assert!(extract_json_array(output).is_err());
     }
 }

@@ -59,7 +59,7 @@ pub struct DoltServer {
     pub port: u16,
     pub project_path: String,
     pub db_name: Option<String>,
-    /// "auto-start" for per-project servers (ports 13307-14306), "central" otherwise.
+    /// "per-project" for discovered dolt.exe processes, "central" for configured shared servers.
     pub source: String,
 }
 
@@ -159,11 +159,7 @@ async fn scan_dolt_processes() -> Result<Vec<DoltServer>, String> {
             .as_ref()
             .and_then(|p| dolt::database_name_for_project(p));
 
-        let source = if (13307..=14306).contains(&port) {
-            "auto-start"
-        } else {
-            "central"
-        };
+        let source = "per-project";
 
         servers.push(DoltServer {
             pid: entry.pid,
@@ -399,15 +395,10 @@ mod tests {
     }
 
     #[test]
-    fn test_source_classification() {
-        assert_eq!(
-            if (13307..=14306).contains(&13805u16) { "auto-start" } else { "central" },
-            "auto-start"
-        );
-        assert_eq!(
-            if (13307..=14306).contains(&3307u16) { "auto-start" } else { "central" },
-            "central"
-        );
+    fn test_source_is_always_per_project() {
+        // All discovered processes use "per-project" source regardless of port
+        let source = "per-project";
+        assert_eq!(source, "per-project");
     }
 
     #[cfg(windows)]
