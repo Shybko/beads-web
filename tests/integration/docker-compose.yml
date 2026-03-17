@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  integration-tests:
+    build:
+      context: ../..
+      dockerfile: tests/integration/Dockerfile
+    environment:
+      - RUST_LOG=info
+      - PORT=3008
