@@ -427,7 +427,7 @@ async fn merge_comments(
     for row in &rows {
         let issue_id = get_str(row, "issue_id");
         map.entry(issue_id.clone()).or_default().push(Comment {
-            id: row.get::<Option<i64>, _>("id").flatten().unwrap_or(0),
+            id: get_str(row, "id"),
             issue_id,
             author: get_str(row, "author"),
             text: get_str(row, "text"),

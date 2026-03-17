@@ -200,10 +200,46 @@ where
     }
 }
 
+fn deserialize_comment_id<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de;
+
+    struct CommentIdVisitor;
+
+    impl<'de> de::Visitor<'de> for CommentIdVisitor {
+        type Value = String;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("string or integer")
+        }
+
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<String, E> {
+            Ok(v.to_string())
+        }
+
+        fn visit_string<E: de::Error>(self, v: String) -> Result<String, E> {
+            Ok(v)
+        }
+
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<String, E> {
+            Ok(v.to_string())
+        }
+
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<String, E> {
+            Ok(v.to_string())
+        }
+    }
+
+    deserializer.deserialize_any(CommentIdVisitor)
+}
+
 /// A comment on a bead.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Comment {
-    pub id: i64,
+    #[serde(deserialize_with = "deserialize_comment_id")]
+    pub id: String,
     pub issue_id: String,
     pub author: String,
     pub text: String,
