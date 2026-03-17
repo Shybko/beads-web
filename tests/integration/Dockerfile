@@ -2,7 +2,7 @@
 FROM node:20-slim AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY next.config.js tsconfig.json tailwind.config.ts postcss.config.js components.json ./
 COPY src ./src
 COPY public ./public
