@@ -85,6 +85,7 @@ export function useBeads(projectPath: string): UseBeadsResult {
 
   // Track if initial load has completed
   const hasLoadedRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
   /**
    * Load beads from the project directory
@@ -97,6 +98,10 @@ export function useBeads(projectPath: string): UseBeadsResult {
       setIsLoading(false);
       return;
     }
+
+    // Skip if a request is already in flight (prevents polling overlap)
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
 
     // Only show loading on initial load, not on refreshes
     if (!hasLoadedRef.current) {
@@ -122,6 +127,7 @@ export function useBeads(projectPath: string): UseBeadsResult {
         console.error("Failed to load beads:", error);
       }
     } finally {
+      isLoadingRef.current = false;
       setIsLoading(false);
     }
   }, [projectPath]);
