@@ -9,15 +9,48 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::OnceLock;
 use tokio::net::TcpStream;
 use tracing::info;
 
 use crate::routes::beads::{Bead, Comment};
 
-/// Default Dolt server connection parameters (configured by bd CLI).
-const DOLT_HOST: &str = "127.0.0.1";
-const DOLT_PORT: u16 = 3307;
-const DOLT_USER: &str = "root";
+/// Dolt server connection parameters from environment variables (with defaults).
+/// Values are read once at first access and cached for the process lifetime.
+fn dolt_host() -> &'static str {
+    static V: OnceLock<String> = OnceLock::new();
+    V.get_or_init(|| std::env::var("DOLT_HOST").unwrap_or_else(|_| "127.0.0.1".into()))
+}
+
+fn dolt_port() -> u16 {
+    static V: OnceLock<u16> = OnceLock::new();
+    *V.get_or_init(|| match std::env::var("DOLT_PORT") {
+        Ok(p) => p.parse().expect("DOLT_PORT must be a valid port number"),
+        Err(_) => 3307,
+    })
+}
+
+fn dolt_user() -> &'static str {
+    static V: OnceLock<String> = OnceLock::new();
+    V.get_or_init(|| std::env::var("DOLT_USER").unwrap_or_else(|_| "root".into()))
+}
+
+fn dolt_password() -> Option<&'static str> {
+    static V: OnceLock<Option<String>> = OnceLock::new();
+    V.get_or_init(|| std::env::var("DOLT_PASSWORD").ok()).as_deref()
+}
+
+/// Builds mysql_async connection options with Dolt env var config.
+/// Port is passed explicitly (callers may override with per-project port).
+fn build_dolt_opts(port: u16, pool_opts: PoolOpts) -> Opts {
+    OptsBuilder::default()
+        .ip_or_hostname(dolt_host())
+        .tcp_port(port)
+        .user(Some(dolt_user()))
+        .pass(dolt_password())
+        .pool_opts(pool_opts)
+        .into()
+}
 
 /// Errors from Dolt operations.
 #[derive(Debug, thiserror::Error)]
@@ -44,12 +77,7 @@ impl DoltManager {
         let pool_opts = PoolOpts::default()
             .with_constraints(PoolConstraints::new(0, 4).unwrap());
 
-        let opts: Opts = OptsBuilder::default()
-            .ip_or_hostname(DOLT_HOST)
-            .tcp_port(DOLT_PORT)
-            .user(Some(DOLT_USER))
-            .pool_opts(pool_opts)
-            .into();
+        let opts = build_dolt_opts(dolt_port(), pool_opts);
 
         Self {
             pool: Pool::new(opts),
@@ -59,7 +87,7 @@ impl DoltManager {
 
     /// Checks if Dolt server is reachable via TCP.
     pub async fn check_server(&self) -> bool {
-        let reachable = TcpStream::connect((DOLT_HOST, DOLT_PORT)).await.is_ok();
+        let reachable = TcpStream::connect((dolt_host(), dolt_port())).await.is_ok();
         self.available.store(reachable, Ordering::Relaxed);
         reachable
     }
@@ -262,14 +290,7 @@ pub async fn read_beads_on_port(port: u16, db_name: &str) -> Result<Vec<Bead>, D
     let pool_opts = PoolOpts::default()
         .with_constraints(PoolConstraints::new(0, 2).unwrap());
 
-    let opts: Opts = OptsBuilder::default()
-        .ip_or_hostname(DOLT_HOST)
-        .tcp_port(port)
-        .user(Some(DOLT_USER))
-        .pool_opts(pool_opts)
-        .into();
-
-    let pool = Pool::new(opts);
+    let pool = Pool::new(build_dolt_opts(port, pool_opts));
     let mut conn = pool.get_conn().await
         .map_err(|e| DoltError::ConnectionFailed(e.to_string()))?;
 
@@ -291,14 +312,7 @@ pub async fn discover_database_on_port(port: u16) -> Result<String, DoltError> {
     let pool_opts = PoolOpts::default()
         .with_constraints(PoolConstraints::new(0, 2).unwrap());
 
-    let opts: Opts = OptsBuilder::default()
-        .ip_or_hostname(DOLT_HOST)
-        .tcp_port(port)
-        .user(Some(DOLT_USER))
-        .pool_opts(pool_opts)
-        .into();
-
-    let pool = Pool::new(opts);
+    let pool = Pool::new(build_dolt_opts(port, pool_opts));
     let mut conn = pool.get_conn().await
         .map_err(|e| DoltError::ConnectionFailed(e.to_string()))?;
 
