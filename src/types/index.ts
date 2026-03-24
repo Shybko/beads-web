@@ -106,6 +106,7 @@ export interface Bead {
   deps?: string[];            // Dependency IDs (blocking this task)
   blockers?: string[];        // COMPUTED: Tasks this blocks (derived from deps relationships)
   relates_to?: string[];      // Bead IDs with relates-to links (bidirectional "see also")
+  label?: string;             // Label from the labels table (first label per bead)
   // Status mapping fields (set by beads-parser when raw status differs from column)
   _originalStatus?: string;   // The raw status from the backend before mapping
   _statusBadge?: StatusBadgeInfo; // Badge info if the bead was mapped to a different column

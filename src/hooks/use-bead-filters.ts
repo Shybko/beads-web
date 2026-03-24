@@ -11,6 +11,8 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 
 import type { Bead, BeadStatus } from "@/types";
 
+export const LABEL_NOT_SET = "LABEL NOT SET";
+
 /**
  * Sort field options
  */
@@ -33,6 +35,9 @@ export interface BeadFilters {
   priorities: number[];
   /** Owner/agent filter - empty array means all owners */
   owners: string[];
+  /** Label filter - null means all labels */
+  // single-select: one label per bead
+  label: string | null;
   /** Sort field */
   sortField: SortField;
   /** Sort direction */
@@ -59,6 +64,8 @@ export interface UseBeadFiltersResult {
   activeFilterCount: number;
   /** Unique owners extracted from beads */
   availableOwners: string[];
+  /** Unique labels extracted from beads */
+  availableLabels: string[];
   /** Debounced search value (for display) */
   debouncedSearch: string;
 }
@@ -71,6 +78,7 @@ const DEFAULT_FILTERS: BeadFilters = {
   statuses: [],
   priorities: [],
   owners: [],
+  label: null,
   sortField: "created_at",
   sortDirection: "desc",
   todayOnly: false,
@@ -172,6 +180,24 @@ export function useBeadFilters(
   }, [beads]);
 
   /**
+   * Extract unique labels from all beads
+   */
+  const availableLabels = useMemo(() => {
+    const labels = new Set<string>();
+    let hasUnlabeled = false;
+    beads.forEach((bead) => {
+      if (bead.label) {
+        labels.add(bead.label);
+      } else {
+        hasUnlabeled = true;
+      }
+    });
+    if (labels.size === 0) return [];
+    const sorted = Array.from(labels).sort();
+    return hasUnlabeled ? [LABEL_NOT_SET, ...sorted] : sorted;
+  }, [beads]);
+
+  /**
    * Apply all filters to beads and sort
    */
   const filteredBeads = useMemo(() => {
@@ -202,6 +228,15 @@ export function useBeadFilters(
       // Owner filter
       if (filters.owners.length > 0) {
         if (!filters.owners.includes(bead.owner)) return false;
+      }
+
+      // Label filter
+      if (filters.label !== null) {
+        if (filters.label === LABEL_NOT_SET) {
+          if (bead.label) return false;
+        } else {
+          if (bead.label !== filters.label) return false;
+        }
       }
 
       // Today filter - items updated (worked on) today, regardless of status.
@@ -240,6 +275,7 @@ export function useBeadFilters(
       filters.statuses.length > 0 ||
       filters.priorities.length > 0 ||
       filters.owners.length > 0 ||
+      filters.label !== null ||
       filters.todayOnly ||
       filters.sortField !== DEFAULT_FILTERS.sortField ||
       filters.sortDirection !== DEFAULT_FILTERS.sortDirection
@@ -254,6 +290,7 @@ export function useBeadFilters(
     if (filters.statuses.length > 0) count++;
     if (filters.priorities.length > 0) count++;
     if (filters.owners.length > 0) count++;
+    if (filters.label !== null) count++;
     if (filters.todayOnly) count++;
     return count;
   }, [filters]);
@@ -266,6 +303,7 @@ export function useBeadFilters(
     hasActiveFilters,
     activeFilterCount,
     availableOwners,
+    availableLabels,
     debouncedSearch,
   };
 }
