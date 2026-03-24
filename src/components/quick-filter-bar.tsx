@@ -60,6 +60,12 @@ interface QuickFilterBarProps {
   onOwnerToggle: (owner: string) => void;
   /** List of available owners */
   availableOwners: string[];
+  /** Active label filter (null = no filter) */
+  label: string | null;
+  /** Callback when label filter changes */
+  onLabelChange: (label: string) => void;
+  /** List of available labels */
+  availableLabels: string[];
   /** Callback to clear all filters */
   onClearFilters: () => void;
   /** Whether any filters are active */
@@ -122,6 +128,9 @@ export function QuickFilterBar({
   owners,
   onOwnerToggle,
   availableOwners,
+  label,
+  onLabelChange,
+  availableLabels,
   onClearFilters,
   hasActiveFilters,
   isMemoryOpen,
@@ -352,6 +361,24 @@ export function QuickFilterBar({
               {option.label}
             </DropdownMenuCheckboxItem>
           ))}
+
+          {availableLabels.length > 0 && (
+            <>
+              <DropdownMenuSeparator className="bg-surface-overlay" />
+              <DropdownMenuLabel className="text-t-tertiary">Label</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-surface-overlay" />
+              {availableLabels.map((lbl) => (
+                <DropdownMenuCheckboxItem
+                  key={lbl}
+                  checked={label === lbl}
+                  onCheckedChange={() => onLabelChange(lbl)}
+                  className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary"
+                >
+                  {lbl}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </>
+          )}
 
           {availableOwners.length > 0 && (
             <>

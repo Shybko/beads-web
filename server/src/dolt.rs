@@ -375,6 +375,7 @@ async fn read_beads_from_conn(
     let beads = query_issues(conn, db_name).await?;
     let mut beads = merge_comments(conn, db_name, beads).await?;
     merge_dependencies(conn, db_name, &mut beads).await?;
+    merge_labels(conn, db_name, &mut beads).await?;
     Ok(beads)
 }
 
@@ -418,7 +419,7 @@ async fn query_issues(conn: &mut mysql_async::Conn, db_name: &str) -> Result<Vec
         close_reason: get_opt_str(row, "close_reason"),
         design_doc: get_opt_str(row, "design"),
         parent_id: None, children: None, deps: None,
-        relates_to: None, comments: None, dependencies: None,
+        relates_to: None, label: None, comments: None, dependencies: None,
     }).collect())
 }
 
@@ -487,6 +488,33 @@ async fn merge_dependencies(
         if let Some(pid) = parent_map.remove(&bead.id) { bead.parent_id = Some(pid); }
         if let Some(b) = blocking_map.remove(&bead.id) { bead.deps = Some(b); }
         if let Some(r) = related_map.remove(&bead.id) { bead.relates_to = Some(r); }
+    }
+    Ok(())
+}
+
+/// Queries labels and merges them into beads (first label per bead wins).
+async fn merge_labels(
+    conn: &mut mysql_async::Conn,
+    db_name: &str,
+    beads: &mut [Bead],
+) -> Result<(), DoltError> {
+    let query = format!(
+        "SELECT issue_id, label FROM `{}`.labels ORDER BY issue_id, label",
+        db_name
+    );
+    let rows: Vec<Row> = conn.query(&query).await
+        .map_err(|e| DoltError::QueryFailed(format!("labels: {}", e)))?;
+
+    let mut map: HashMap<String, String> = HashMap::new();
+    for row in &rows {
+        let issue_id = get_str(row, "issue_id");
+        let label = get_str(row, "label");
+        map.entry(issue_id).or_insert(label);
+    }
+    for bead in beads.iter_mut() {
+        if let Some(label) = map.remove(&bead.id) {
+            bead.label = Some(label);
+        }
     }
     Ok(())
 }

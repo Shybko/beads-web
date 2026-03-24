@@ -4,6 +4,7 @@ import { FolderOpen, GitPullRequest, Link2, MessageSquare, Check, X, Clock } fro
 
 import { CopyableText } from "@/components/copyable-text";
 import { Badge } from "@/components/ui/badge";
+import { LABEL_NOT_SET } from "@/hooks/use-bead-filters";
 import { useTheme } from "@/hooks/use-theme";
 import { formatBeadId, formatWorktreePath, isBlocked, truncate } from "@/lib/bead-utils";
 import { cn } from "@/lib/utils";
@@ -265,6 +266,15 @@ export function BeadCard({ bead, ticketNumber, worktreeStatus, prStatus, isSelec
               {commentCount}
             </span>
           )}
+          {bead.label ? (
+            <span className="theme-badge text-[10px] font-medium px-1.5 py-0.5 bg-violet-500/12 text-violet-400 ring-1 ring-violet-500/20">
+              {bead.label}
+            </span>
+          ) : (
+            <span className="theme-badge text-[10px] px-1.5 py-0.5 text-t-faint">
+              {LABEL_NOT_SET}
+            </span>
+          )}
         </div>
       </div>
     );
@@ -320,6 +330,15 @@ export function BeadCard({ bead, ticketNumber, worktreeStatus, prStatus, isSelec
               "bg-surface-overlay text-t-muted"
             )}>
               P{bead.priority}
+            </span>
+          )}
+          {bead.label ? (
+            <span className="theme-badge text-[10px] font-medium px-1.5 py-0.5 bg-violet-500/12 text-violet-400 ring-1 ring-violet-500/20">
+              {bead.label}
+            </span>
+          ) : (
+            <span className="theme-badge text-[10px] px-1.5 py-0.5 text-t-faint">
+              {LABEL_NOT_SET}
             </span>
           )}
           {inlinePRBadge}
@@ -384,6 +403,15 @@ export function BeadCard({ bead, ticketNumber, worktreeStatus, prStatus, isSelec
                 </Badge>
               )}
               <Badge variant="outline" size="xs" className="theme-badge">{getTypeLabel(bead)}</Badge>
+              {bead.label ? (
+                <span className="theme-badge text-[10px] font-medium px-1.5 py-0.5 bg-violet-500/12 text-violet-400 ring-1 ring-violet-500/20">
+                  {bead.label}
+                </span>
+              ) : (
+                <span className="theme-badge text-[10px] px-1.5 py-0.5 text-t-faint">
+                  {LABEL_NOT_SET}
+                </span>
+              )}
             </div>
           </div>
 

@@ -159,6 +159,8 @@ pub struct Bead {
     pub deps: Option<Vec<String>>,
     #[serde(default, alias = "related")]
     pub relates_to: Option<Vec<String>>,
+    #[serde(default)]
+    pub label: Option<String>,
     /// Raw dependencies field — accepts both old (array of objects) and new (array of strings) formats.
     #[serde(default, skip_serializing, deserialize_with = "deserialize_dependencies")]
     pub(crate) dependencies: Option<RawDependencies>,

@@ -21,6 +21,7 @@ import { EditableField } from "@/components/editable-field";
 import { SubtaskList } from "@/components/subtask-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LABEL_NOT_SET } from "@/hooks/use-bead-filters";
 import { toast } from "@/hooks/use-toast";
 import * as api from "@/lib/api";
 import {
@@ -281,6 +282,14 @@ export function BeadDetail({
                   <option value="inreview">In Review</option>
                   <option value="closed">Closed</option>
                 </select>
+              )}
+            </span>
+            <span className="text-t-faint" aria-hidden="true">•</span>
+            <span className="flex items-center gap-1.5">
+              {bead.label ? (
+                <span className="text-sm font-medium text-violet-400">{bead.label}</span>
+              ) : (
+                <span className="text-sm text-t-faint">{LABEL_NOT_SET}</span>
               )}
             </span>
             <span className="text-t-faint" aria-hidden="true">•</span>
