@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, Archive, ArchiveRestore, Code, FolderOpen, Loader2, Settings } from "lucide-react";
 
 import { ProjectSettingsDialog } from "@/components/project-settings-dialog";
-
 import { StatusDonut } from "@/components/status-donut";
 import { TagPicker } from "@/components/tag-picker";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useToast } from "@/hooks/use-toast";
 import * as api from "@/lib/api";
 import type { Tag } from "@/lib/db";
+import { deriveBeadPrefix } from "@/lib/utils";
 import type { BeadCounts } from "@/types";
 
 /**
@@ -53,6 +53,12 @@ interface ProjectCardProps {
   localPath?: string;
   tags: Tag[];
   beadCounts?: BeadCounts;
+  /**
+   * True once `beadCounts` reflects either cached or freshly-fetched
+   * data. When false, the card renders a dashed placeholder donut so
+   * the user never sees misleading zeros on first paint.
+   */
+  countsLoaded?: boolean;
   dataSource?: string;
   beadError?: string;
   archivedAt?: string;
@@ -70,6 +76,7 @@ export function ProjectCard({
   localPath,
   tags,
   beadCounts = { open: 0, in_progress: 0, inreview: 0, closed: 0 },
+  countsLoaded = true,
   dataSource,
   beadError,
   archivedAt,
@@ -148,7 +155,7 @@ export function ProjectCard({
             </Tooltip>
           </TooltipProvider>
         ) : (
-          <StatusDonut beadCounts={beadCounts} size={36} />
+          <StatusDonut beadCounts={beadCounts} size={36} countsLoaded={countsLoaded} />
         )}
         <div
           className="flex flex-wrap items-center gap-1.5"
@@ -198,13 +205,41 @@ export function ProjectCard({
               Archived
             </span>
           )}
-          {!archivedAt && dataSource && (
+          {!archivedAt && dataSource === 'jsonl' && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    role="note"
+                    tabIndex={0}
+                    aria-label={`Old beads format — migrate with bd init --prefix ${deriveBeadPrefix(path, name)}`}
+                  >
+                    <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                    Old format — migrate
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <div className="space-y-1">
+                    <p className="text-xs">
+                      This project uses the old JSONL beads format. Run this in the project directory to migrate to Dolt:
+                    </p>
+                    <code className="block rounded bg-black/30 px-1.5 py-1 font-mono text-[11px]">
+                      bd init --prefix {deriveBeadPrefix(path, name)}
+                    </code>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {!archivedAt && dataSource && dataSource !== 'jsonl' && (
             <span className="inline-flex shrink-0 items-center rounded-full bg-surface-overlay px-2 py-0.5 text-[10px] font-medium text-t-muted">
               {dataSource === 'dolt-project' ? 'Dolt (project)' :
                dataSource === 'dolt-central' ? 'Dolt (central)' :
                dataSource === 'dolt-direct' ? 'Dolt (direct)' :
-               dataSource === 'cli' ? 'CLI' :
-               dataSource === 'jsonl' ? 'JSONL' : dataSource}
+               dataSource === 'cli' ? 'CLI' : dataSource}
             </span>
           )}
         </div>
